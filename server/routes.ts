@@ -619,7 +619,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { id } = req.params;
       const entryData = insertCashFlowEntrySchema.partial().parse(req.body);
       
-      const user = await storage.getUser(req.user.userId);
+      const user = await storage.getUser(req.user!.userId);
       if (!user) {
         return res.status(401).json({ message: "User not found" });
       }
@@ -640,7 +640,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
       
-      const user = await storage.getUser(req.user.userId);
+      const user = await storage.getUser(req.user!.userId);
       if (!user) {
         return res.status(401).json({ message: "User not found" });
       }
@@ -664,7 +664,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Start date and end date are required" });
       }
       
-      const user = await storage.getUser(req.user.userId);
+      const user = await storage.getUser(req.user!.userId);
       if (!user) {
         return res.status(401).json({ message: "User not found" });
       }
@@ -728,7 +728,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { id } = req.params;
       const categoryData = insertCashFlowCategorySchema.partial().parse(req.body);
       
-      const user = await storage.getUser(req.user.userId);
+      const user = await storage.getUser(req.user!.userId);
       if (!user) {
         return res.status(401).json({ message: "User not found" });
       }
@@ -749,7 +749,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
       
-      const user = await storage.getUser(req.user.userId);
+      const user = await storage.getUser(req.user!.userId);
       if (!user) {
         return res.status(401).json({ message: "User not found" });
       }
@@ -769,7 +769,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Accounts Receivable routes
   app.get("/api/accounts-receivable", requireAuth, async (req, res) => {
     try {
-      const user = await storage.getUser(req.user.userId);
+      const user = await storage.getUser(req.user!.userId);
       if (!user) {
         return res.status(401).json({ message: "User not found" });
       }
@@ -785,7 +785,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/inventory/movements/:productId", requireAuth, async (req, res) => {
     try {
       const { productId } = req.params;
-      const user = await storage.getUser(req.user.userId);
+      const user = await storage.getUser(req.user!.userId);
       if (!user) {
         return res.status(401).json({ message: "User not found" });
       }
@@ -801,6 +801,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { productId, quantity, reason } = req.body;
       
+      const user = await storage.getUser(req.user!.userId);
+      if (!user) {
+        return res.status(401).json({ message: "User not found" });
+      }
+      
       // Update stock
       await storage.updateProductStock(productId, quantity);
       
@@ -810,7 +815,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         type: "adjustment",
         quantity,
         reason,
-        userId: req.user!.userId
+        userId: req.user!.userId,
+        storeId: user.storeId
       });
       
       res.status(201).json(movement);
