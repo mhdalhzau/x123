@@ -5,9 +5,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { getAuthHeaders } from "@/lib/auth";
-import { ShoppingCart as CartIcon, CreditCard, Banknote, Smartphone, Pause, Trash2, Minus, Plus, Receipt, Printer } from "lucide-react";
+import { ShoppingCart as CartIcon, CreditCard, Banknote, Smartphone, Pause, Trash2, Minus, Plus, Receipt, Printer, Clock, Package } from "lucide-react";
 import ThermalReceipt, { printThermalReceipt } from "./ThermalReceipt";
 
 interface CartItem {
@@ -24,6 +26,7 @@ interface ShoppingCartProps {
   onUpdateQuantity: (itemId: string, quantity: number) => void;
   onRemoveItem: (itemId: string) => void;
   onClearCart: () => void;
+  onHoldOrder?: (type: string, customerName: string) => void;
 }
 
 export default function ShoppingCart({
@@ -31,12 +34,16 @@ export default function ShoppingCart({
   onUpdateQuantity,
   onRemoveItem,
   onClearCart,
+  onHoldOrder,
 }: ShoppingCartProps) {
   const [paymentMethod, setPaymentMethod] = useState<"cash" | "card" | "digital">("cash");
   const [selectedCustomer, setSelectedCustomer] = useState<string>("walk-in");
   const [editingQuantity, setEditingQuantity] = useState<string | null>(null);
   const [tempQuantity, setTempQuantity] = useState<string>("");
   const [lastSaleData, setLastSaleData] = useState<any>(null);
+  const [showHoldDialog, setShowHoldDialog] = useState(false);
+  const [holdType, setHoldType] = useState<string>("Dine In");
+  const [holdCustomerName, setHoldCustomerName] = useState<string>("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -76,7 +83,7 @@ export default function ShoppingCart({
           tax: data.calculatedTax || tax.toFixed(2),
           total: data.calculatedTotal || total.toFixed(2),
           paymentMethod,
-          customerName: customers.find((c: any) => c.id === selectedCustomer)?.firstName + " " + customers.find((c: any) => c.id === selectedCustomer)?.lastName
+          customerName: getCustomerName(selectedCustomer)
         });
       }
       
@@ -104,6 +111,52 @@ export default function ShoppingCart({
   const taxRate = 0.085; // 8.5%
   const tax = subtotal * taxRate;
   const total = subtotal + tax;
+
+  // Helper function to get proper customer name
+  const getCustomerName = (customerId: string): string => {
+    if (customerId === "walk-in") return "Walk-in Customer";
+    const customer = customers.find((c: any) => c.id === customerId);
+    if (!customer) return "Unknown Customer";
+    const firstName = customer.firstName || "";
+    const lastName = customer.lastName || "";
+    const fullName = `${firstName} ${lastName}`.trim();
+    return fullName || "Unknown Customer";
+  };
+
+  const holdOrderTypes = [
+    "Dine In",
+    "Take Out", 
+    "Delivery",
+    "Pickup",
+    "Reserved",
+    "Catering"
+  ];
+
+  const handleHoldOrder = () => {
+    if (!onHoldOrder) return;
+    
+    if (items.length === 0) {
+      toast({
+        title: "Cart is empty",
+        description: "Add items to cart before holding order",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const customerName = holdCustomerName.trim() || getCustomerName(selectedCustomer);
+
+    onHoldOrder(holdType, customerName);
+    
+    toast({
+      title: "Order held successfully",
+      description: `${holdType} order for ${customerName} has been saved`,
+    });
+    
+    setShowHoldDialog(false);
+    setHoldCustomerName("");
+    setHoldType("Dine In");
+  };
 
   const handleProcessPayment = () => {
     if (items.length === 0) {
@@ -360,10 +413,84 @@ export default function ShoppingCart({
           
           {items.length > 0 && (
             <div className="grid grid-cols-2 gap-3">
-              <Button variant="secondary" size="sm" data-testid="button-hold">
-                <Pause className="mr-1 w-4 h-4" />
-                Hold
-              </Button>
+              <Dialog open={showHoldDialog} onOpenChange={setShowHoldDialog}>
+                <DialogTrigger asChild>
+                  <Button variant="secondary" size="sm" data-testid="button-hold">
+                    <Pause className="mr-1 w-4 h-4" />
+                    Hold
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                      <Clock className="w-5 h-5" />
+                      Hold Order
+                    </DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="hold-type">Order Type</Label>
+                      <Select value={holdType} onValueChange={setHoldType}>
+                        <SelectTrigger data-testid="hold-type-select">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {holdOrderTypes.map((type) => (
+                            <SelectItem key={type} value={type}>
+                              <div className="flex items-center gap-2">
+                                <Package className="w-4 h-4" />
+                                {type}
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="customer-name">Customer Name (Optional)</Label>
+                      <Input
+                        id="customer-name"
+                        value={holdCustomerName}
+                        onChange={(e) => setHoldCustomerName(e.target.value)}
+                        placeholder="Enter customer name or leave blank"
+                        data-testid="hold-customer-name"
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Default: {selectedCustomer === "walk-in" ? "Walk-in Customer" : 
+                          customers.find((c: any) => c.id === selectedCustomer)?.firstName + " " + 
+                          customers.find((c: any) => c.id === selectedCustomer)?.lastName}
+                      </p>
+                    </div>
+
+                    <div className="bg-muted p-3 rounded">
+                      <div className="text-sm font-medium mb-2">Order Summary:</div>
+                      <div className="text-sm text-muted-foreground">
+                        {items.length} items • Total: ${total.toFixed(2)}
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2 pt-4">
+                      <Button 
+                        variant="outline" 
+                        className="flex-1"
+                        onClick={() => setShowHoldDialog(false)}
+                      >
+                        Cancel
+                      </Button>
+                      <Button 
+                        className="flex-1"
+                        onClick={handleHoldOrder}
+                        data-testid="confirm-hold"
+                      >
+                        <Pause className="w-4 h-4 mr-2" />
+                        Hold Order
+                      </Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
+              
               <Button 
                 variant="destructive" 
                 size="sm" 

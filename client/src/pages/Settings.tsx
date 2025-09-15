@@ -1,17 +1,18 @@
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, Printer, Settings as SettingsIcon, ShieldAlert } from "lucide-react";
+import { Users, Printer, Settings as SettingsIcon, ShieldAlert, Shield } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import UsersTab from "@/components/settings/UsersTab";
 import PrinterTab from "@/components/settings/PrinterTab";
+import MenuRestrictionsTab from "@/components/settings/MenuRestrictionsTab";
 
 export default function Settings() {
   const [activeTab, setActiveTab] = useState("users");
   const { user } = useAuth();
 
-  // Admin-only access
-  if (user?.role !== "admin") {
+  // Administrator-only access
+  if (user?.role !== "administrator") {
     return (
       <main className="p-6 animate-fade-in">
         <div className="flex flex-col items-center justify-center min-h-[60vh]">
@@ -35,7 +36,7 @@ export default function Settings() {
       <Card>
         <CardContent className="p-6">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="users" className="flex items-center gap-2">
                 <Users className="w-4 h-4" />
                 User Management
@@ -43,6 +44,10 @@ export default function Settings() {
               <TabsTrigger value="printer" className="flex items-center gap-2">
                 <Printer className="w-4 h-4" />
                 Printer Settings
+              </TabsTrigger>
+              <TabsTrigger value="menu-restrictions" className="flex items-center gap-2">
+                <Shield className="w-4 h-4" />
+                Menu Restrictions
               </TabsTrigger>
             </TabsList>
             
@@ -52,6 +57,10 @@ export default function Settings() {
             
             <TabsContent value="printer" className="mt-6">
               <PrinterTab />
+            </TabsContent>
+            
+            <TabsContent value="menu-restrictions" className="mt-6">
+              <MenuRestrictionsTab />
             </TabsContent>
           </Tabs>
         </CardContent>

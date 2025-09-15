@@ -1,4 +1,5 @@
 import { 
+  type Store, type InsertStore,
   type User, type InsertUser,
   type Category, type InsertCategory,
   type Supplier, type InsertSupplier,
@@ -13,6 +14,13 @@ import {
 import { randomUUID } from "crypto";
 
 export interface IStorage {
+  // Stores
+  getStore(id: string): Promise<Store | undefined>;
+  createStore(store: InsertStore): Promise<Store>;
+  updateStore(id: string, store: Partial<InsertStore>): Promise<Store | undefined>;
+  deleteStore(id: string): Promise<boolean>;
+  getAllStores(): Promise<Store[]>;
+
   // Users
   getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
@@ -26,38 +34,38 @@ export interface IStorage {
   createCategory(category: InsertCategory): Promise<Category>;
   updateCategory(id: string, category: Partial<InsertCategory>): Promise<Category | undefined>;
   deleteCategory(id: string): Promise<boolean>;
-  getAllCategories(): Promise<Category[]>;
+  getAllCategories(storeId: string): Promise<Category[]>;
 
   // Suppliers
   getSupplier(id: string): Promise<Supplier | undefined>;
   createSupplier(supplier: InsertSupplier): Promise<Supplier>;
   updateSupplier(id: string, supplier: Partial<InsertSupplier>): Promise<Supplier | undefined>;
   deleteSupplier(id: string): Promise<boolean>;
-  getAllSuppliers(): Promise<Supplier[]>;
+  getAllSuppliers(storeId: string): Promise<Supplier[]>;
 
   // Customers
   getCustomer(id: string): Promise<Customer | undefined>;
   createCustomer(customer: InsertCustomer): Promise<Customer>;
   updateCustomer(id: string, customer: Partial<InsertCustomer>): Promise<Customer | undefined>;
   deleteCustomer(id: string): Promise<boolean>;
-  getAllCustomers(): Promise<Customer[]>;
+  getAllCustomers(storeId: string): Promise<Customer[]>;
 
   // Products
   getProduct(id: string): Promise<Product | undefined>;
-  getProductBySku(sku: string): Promise<Product | undefined>;
-  getProductByBarcode(barcode: string): Promise<Product | undefined>;
+  getProductBySku(sku: string, storeId: string): Promise<Product | undefined>;
+  getProductByBarcode(barcode: string, storeId: string): Promise<Product | undefined>;
   createProduct(product: InsertProduct): Promise<Product>;
   updateProduct(id: string, product: Partial<InsertProduct>): Promise<Product | undefined>;
   deleteProduct(id: string): Promise<boolean>;
-  getAllProducts(): Promise<Product[]>;
-  getLowStockProducts(): Promise<Product[]>;
+  getAllProducts(storeId: string): Promise<Product[]>;
+  getLowStockProducts(storeId: string): Promise<Product[]>;
 
   // Sales
   getSale(id: string): Promise<Sale | undefined>;
   createSale(sale: InsertSale): Promise<Sale>;
-  getSalesByDateRange(startDate: Date, endDate: Date): Promise<Sale[]>;
-  getSalesByUser(userId: string): Promise<Sale[]>;
-  getAllSales(): Promise<Sale[]>;
+  getSalesByDateRange(startDate: Date, endDate: Date, storeId: string): Promise<Sale[]>;
+  getSalesByUser(userId: string, storeId: string): Promise<Sale[]>;
+  getAllSales(storeId: string): Promise<Sale[]>;
   
   // Atomic sales processing
   processSaleAtomic(sale: InsertSale, items: { productId: string; quantity: number; unitPrice: string; total: string }[]): Promise<{ sale: Sale; items: SaleItem[]; error?: string }>;
@@ -68,27 +76,27 @@ export interface IStorage {
 
   // Inventory
   createInventoryMovement(movement: InsertInventoryMovement): Promise<InventoryMovement>;
-  getInventoryMovements(productId: string): Promise<InventoryMovement[]>;
+  getInventoryMovements(productId: string, storeId: string): Promise<InventoryMovement[]>;
   updateProductStock(productId: string, quantity: number): Promise<boolean>;
 
   // Cash Flow Categories
   getCashFlowCategory(id: string): Promise<CashFlowCategory | undefined>;
   createCashFlowCategory(category: InsertCashFlowCategory): Promise<CashFlowCategory>;
-  updateCashFlowCategory(id: string, category: Partial<InsertCashFlowCategory>): Promise<CashFlowCategory | undefined>;
-  deleteCashFlowCategory(id: string): Promise<boolean>;
-  getAllCashFlowCategories(): Promise<CashFlowCategory[]>;
-  getCashFlowCategoriesByType(type: 'income' | 'expense'): Promise<CashFlowCategory[]>;
+  updateCashFlowCategory(id: string, category: Partial<InsertCashFlowCategory>, storeId: string): Promise<CashFlowCategory | undefined>;
+  deleteCashFlowCategory(id: string, storeId: string): Promise<boolean>;
+  getAllCashFlowCategories(storeId: string): Promise<CashFlowCategory[]>;
+  getCashFlowCategoriesByType(type: 'income' | 'expense', storeId: string): Promise<CashFlowCategory[]>;
 
   // Enhanced Cash Flow
   createCashFlowEntry(entry: InsertCashFlowEntry): Promise<CashFlowEntry>;
-  updateCashFlowEntry(id: string, entry: Partial<InsertCashFlowEntry>): Promise<CashFlowEntry | undefined>;
-  deleteCashFlowEntry(id: string): Promise<boolean>;
-  getCashFlowEntries(): Promise<CashFlowEntry[]>;
-  getCashFlowEntriesByDate(date: Date): Promise<CashFlowEntry[]>;
-  getCashFlowEntriesByDateRange(startDate: Date, endDate: Date): Promise<CashFlowEntry[]>;
-  getUnpaidCashFlowEntries(): Promise<CashFlowEntry[]>;
-  getCashFlowEntriesByCustomer(customerId: string): Promise<CashFlowEntry[]>;
-  getTodayCashFlowStats(): Promise<{
+  updateCashFlowEntry(id: string, entry: Partial<InsertCashFlowEntry>, storeId: string): Promise<CashFlowEntry | undefined>;
+  deleteCashFlowEntry(id: string, storeId: string): Promise<boolean>;
+  getCashFlowEntries(storeId: string): Promise<CashFlowEntry[]>;
+  getCashFlowEntriesByDate(date: Date, storeId: string): Promise<CashFlowEntry[]>;
+  getCashFlowEntriesByDateRange(startDate: Date, endDate: Date, storeId: string): Promise<CashFlowEntry[]>;
+  getUnpaidCashFlowEntries(storeId: string): Promise<CashFlowEntry[]>;
+  getCashFlowEntriesByCustomer(customerId: string, storeId: string): Promise<CashFlowEntry[]>;
+  getTodayCashFlowStats(storeId: string): Promise<{
     totalSales: number;
     salesCount: number;
     totalIncome: number;
@@ -97,7 +105,7 @@ export interface IStorage {
   }>;
   
   // Accounts Receivable
-  getAccountsReceivable(): Promise<{
+  getAccountsReceivable(storeId: string): Promise<{
     customerId: string;
     customerName: string;
     totalUnpaid: number;
@@ -105,7 +113,7 @@ export interface IStorage {
   }[]>;
 
   // Dashboard stats
-  getDashboardStats(): Promise<{
+  getDashboardStats(storeId: string): Promise<{
     todaySales: number;
     ordersToday: number;
     totalProducts: number;
@@ -115,6 +123,7 @@ export interface IStorage {
 }
 
 export class MemStorage implements IStorage {
+  private stores: Map<string, Store> = new Map();
   private users: Map<string, User> = new Map();
   private categories: Map<string, Category> = new Map();
   private suppliers: Map<string, Supplier> = new Map();
@@ -131,16 +140,30 @@ export class MemStorage implements IStorage {
   }
 
   private initializeData() {
-    // Create default admin user
+    // Create default store
+    const defaultStoreId = randomUUID();
+    this.stores.set(defaultStoreId, {
+      id: defaultStoreId,
+      name: "Main Store",
+      address: "123 Main Street",
+      phone: "+62-123-456-7890",
+      email: "main@starpos.com",
+      description: "Main store location",
+      isActive: true,
+      createdAt: new Date(),
+    });
+
+    // Create default administrator user (super admin)
     const adminId = randomUUID();
     this.users.set(adminId, {
       id: adminId,
       username: "admin",
       password: "admin123", // In production, this should be hashed
-      firstName: "Admin",
-      lastName: "User",
+      firstName: "Administrator",
+      lastName: "SuperAdmin",
       email: "admin@starpos.com",
-      role: "admin",
+      role: "administrator",
+      storeId: defaultStoreId,
       isActive: true,
     });
 
@@ -150,6 +173,7 @@ export class MemStorage implements IStorage {
       id: electronicsId,
       name: "Electronics",
       description: "Electronic devices and accessories",
+      storeId: defaultStoreId,
     });
 
     const accessoriesId = randomUUID();
@@ -157,6 +181,7 @@ export class MemStorage implements IStorage {
       id: accessoriesId,
       name: "Accessories",
       description: "Various accessories and add-ons",
+      storeId: defaultStoreId,
     });
 
     // Create sample products
@@ -174,6 +199,7 @@ export class MemStorage implements IStorage {
       stock: "45.000",
       minStockLevel: "5.000",
       brand: "AudioTech",
+      storeId: defaultStoreId,
       isActive: true,
     });
 
@@ -191,6 +217,7 @@ export class MemStorage implements IStorage {
       stock: "128.000",
       minStockLevel: "10.000",
       brand: "ProtectiveGear",
+      storeId: defaultStoreId,
       isActive: true,
     });
 
@@ -225,6 +252,7 @@ export class MemStorage implements IStorage {
         name: cat.name,
         type: "income",
         description: cat.description,
+        storeId: defaultStoreId,
         isActive: true
       });
     });
@@ -236,9 +264,47 @@ export class MemStorage implements IStorage {
         name: cat.name,
         type: "expense",
         description: cat.description,
+        storeId: defaultStoreId,
         isActive: true
       });
     });
+  }
+
+  // Stores
+  async getStore(id: string): Promise<Store | undefined> {
+    return this.stores.get(id);
+  }
+
+  async createStore(insertStore: InsertStore): Promise<Store> {
+    const id = randomUUID();
+    const store: Store = { 
+      ...insertStore, 
+      id,
+      address: insertStore.address ?? null,
+      phone: insertStore.phone ?? null,
+      email: insertStore.email ?? null,
+      description: insertStore.description ?? null,
+      isActive: insertStore.isActive ?? true,
+      createdAt: new Date(),
+    };
+    this.stores.set(id, store);
+    return store;
+  }
+
+  async updateStore(id: string, storeData: Partial<InsertStore>): Promise<Store | undefined> {
+    const store = this.stores.get(id);
+    if (!store) return undefined;
+    const updatedStore = { ...store, ...storeData };
+    this.stores.set(id, updatedStore);
+    return updatedStore;
+  }
+
+  async deleteStore(id: string): Promise<boolean> {
+    return this.stores.delete(id);
+  }
+
+  async getAllStores(): Promise<Store[]> {
+    return Array.from(this.stores.values());
   }
 
   // Users
@@ -255,7 +321,7 @@ export class MemStorage implements IStorage {
     const user: User = { 
       ...insertUser, 
       id,
-      role: insertUser.role ?? "cashier",
+      role: insertUser.role ?? "kasir",
       isActive: insertUser.isActive ?? true
     };
     this.users.set(id, user);
@@ -306,8 +372,8 @@ export class MemStorage implements IStorage {
     return this.categories.delete(id);
   }
 
-  async getAllCategories(): Promise<Category[]> {
-    return Array.from(this.categories.values());
+  async getAllCategories(storeId: string): Promise<Category[]> {
+    return Array.from(this.categories.values()).filter(category => category.storeId === storeId);
   }
 
   // Suppliers
@@ -341,8 +407,8 @@ export class MemStorage implements IStorage {
     return this.suppliers.delete(id);
   }
 
-  async getAllSuppliers(): Promise<Supplier[]> {
-    return Array.from(this.suppliers.values());
+  async getAllSuppliers(storeId: string): Promise<Supplier[]> {
+    return Array.from(this.suppliers.values()).filter(supplier => supplier.storeId === storeId);
   }
 
   // Customers
@@ -376,8 +442,8 @@ export class MemStorage implements IStorage {
     return this.customers.delete(id);
   }
 
-  async getAllCustomers(): Promise<Customer[]> {
-    return Array.from(this.customers.values());
+  async getAllCustomers(storeId: string): Promise<Customer[]> {
+    return Array.from(this.customers.values()).filter(customer => customer.storeId === storeId);
   }
 
   // Products
@@ -385,12 +451,12 @@ export class MemStorage implements IStorage {
     return this.products.get(id);
   }
 
-  async getProductBySku(sku: string): Promise<Product | undefined> {
-    return Array.from(this.products.values()).find(product => product.sku === sku);
+  async getProductBySku(sku: string, storeId: string): Promise<Product | undefined> {
+    return Array.from(this.products.values()).find(product => product.sku === sku && product.storeId === storeId);
   }
 
-  async getProductByBarcode(barcode: string): Promise<Product | undefined> {
-    return Array.from(this.products.values()).find(product => product.barcode === barcode);
+  async getProductByBarcode(barcode: string, storeId: string): Promise<Product | undefined> {
+    return Array.from(this.products.values()).find(product => product.barcode === barcode && product.storeId === storeId);
   }
 
   async createProduct(insertProduct: InsertProduct): Promise<Product> {
@@ -423,13 +489,13 @@ export class MemStorage implements IStorage {
     return this.products.delete(id);
   }
 
-  async getAllProducts(): Promise<Product[]> {
-    return Array.from(this.products.values());
+  async getAllProducts(storeId: string): Promise<Product[]> {
+    return Array.from(this.products.values()).filter(product => product.storeId === storeId);
   }
 
-  async getLowStockProducts(): Promise<Product[]> {
+  async getLowStockProducts(storeId: string): Promise<Product[]> {
     return Array.from(this.products.values()).filter(product => 
-      parseFloat(product.stock) <= parseFloat(product.minStockLevel)
+      product.storeId === storeId && parseFloat(product.stock) <= parseFloat(product.minStockLevel)
     );
   }
 
@@ -453,18 +519,18 @@ export class MemStorage implements IStorage {
     return sale;
   }
 
-  async getSalesByDateRange(startDate: Date, endDate: Date): Promise<Sale[]> {
+  async getSalesByDateRange(startDate: Date, endDate: Date, storeId: string): Promise<Sale[]> {
     return Array.from(this.sales.values()).filter(sale => 
-      sale.saleDate >= startDate && sale.saleDate <= endDate
+      sale.storeId === storeId && sale.saleDate >= startDate && sale.saleDate <= endDate
     );
   }
 
-  async getSalesByUser(userId: string): Promise<Sale[]> {
-    return Array.from(this.sales.values()).filter(sale => sale.userId === userId);
+  async getSalesByUser(userId: string, storeId: string): Promise<Sale[]> {
+    return Array.from(this.sales.values()).filter(sale => sale.userId === userId && sale.storeId === storeId);
   }
 
-  async getAllSales(): Promise<Sale[]> {
-    return Array.from(this.sales.values());
+  async getAllSales(storeId: string): Promise<Sale[]> {
+    return Array.from(this.sales.values()).filter(sale => sale.storeId === storeId);
   }
 
   // Sale Items
@@ -499,8 +565,9 @@ export class MemStorage implements IStorage {
     return movement;
   }
 
-  async getInventoryMovements(productId: string): Promise<InventoryMovement[]> {
-    return this.inventoryMovements.get(productId) || [];
+  async getInventoryMovements(productId: string, storeId: string): Promise<InventoryMovement[]> {
+    const movements = this.inventoryMovements.get(productId) || [];
+    return movements.filter(movement => movement.storeId === storeId);
   }
 
   async updateProductStock(productId: string, quantity: number): Promise<boolean> {
@@ -514,22 +581,22 @@ export class MemStorage implements IStorage {
     return true;
   }
 
-  async getDashboardStats() {
+  async getDashboardStats(storeId: string) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
 
     const todaySales = Array.from(this.sales.values())
-      .filter(sale => sale.saleDate >= today && sale.saleDate < tomorrow)
+      .filter(sale => sale.storeId === storeId && sale.saleDate >= today && sale.saleDate < tomorrow)
       .reduce((sum, sale) => sum + parseFloat(sale.total), 0);
 
     const ordersToday = Array.from(this.sales.values())
-      .filter(sale => sale.saleDate >= today && sale.saleDate < tomorrow).length;
+      .filter(sale => sale.storeId === storeId && sale.saleDate >= today && sale.saleDate < tomorrow).length;
 
-    const totalProducts = this.products.size;
-    const lowStockCount = (await this.getLowStockProducts()).length;
-    const totalCustomers = this.customers.size;
+    const totalProducts = Array.from(this.products.values()).filter(product => product.storeId === storeId).length;
+    const lowStockCount = (await this.getLowStockProducts(storeId)).length;
+    const totalCustomers = Array.from(this.customers.values()).filter(customer => customer.storeId === storeId).length;
 
     return {
       todaySales,
@@ -593,7 +660,8 @@ export class MemStorage implements IStorage {
           type: "out",
           quantity: item.quantity.toString(),
           reason: `Sale #${sale.id}`,
-          userId: saleData.userId
+          userId: saleData.userId,
+          storeId: saleData.storeId
         });
       }
       
@@ -632,22 +700,24 @@ export class MemStorage implements IStorage {
     return entry;
   }
 
-  async getCashFlowEntries(): Promise<CashFlowEntry[]> {
-    return [...this.cashFlowEntries].sort((a, b) => b.date.getTime() - a.date.getTime());
+  async getCashFlowEntries(storeId: string): Promise<CashFlowEntry[]> {
+    return [...this.cashFlowEntries]
+      .filter(entry => entry.storeId === storeId)
+      .sort((a, b) => b.date.getTime() - a.date.getTime());
   }
 
-  async getCashFlowEntriesByDate(date: Date): Promise<CashFlowEntry[]> {
+  async getCashFlowEntriesByDate(date: Date, storeId: string): Promise<CashFlowEntry[]> {
     const startOfDay = new Date(date);
     startOfDay.setHours(0, 0, 0, 0);
     const endOfDay = new Date(date);
     endOfDay.setHours(23, 59, 59, 999);
 
     return this.cashFlowEntries.filter(entry => 
-      entry.date >= startOfDay && entry.date <= endOfDay
+      entry.storeId === storeId && entry.date >= startOfDay && entry.date <= endOfDay
     );
   }
 
-  async getTodayCashFlowStats(): Promise<{
+  async getTodayCashFlowStats(storeId: string): Promise<{
     totalSales: number;
     salesCount: number;
     totalIncome: number;
@@ -659,15 +729,15 @@ export class MemStorage implements IStorage {
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
 
-    // Get today's sales
+    // Get today's sales for the specific store
     const todaySales = Array.from(this.sales.values())
-      .filter(sale => sale.saleDate >= today && sale.saleDate < tomorrow);
+      .filter(sale => sale.storeId === storeId && sale.saleDate >= today && sale.saleDate < tomorrow);
     
     const totalSales = todaySales.reduce((sum, sale) => sum + parseFloat(sale.total), 0);
     const salesCount = todaySales.length;
 
-    // Get today's cash flow entries
-    const todayEntries = await this.getCashFlowEntriesByDate(today);
+    // Get today's cash flow entries for the specific store
+    const todayEntries = await this.getCashFlowEntriesByDate(today, storeId);
     
     const totalIncome = todayEntries
       .filter(entry => entry.type === "income")
@@ -705,34 +775,39 @@ export class MemStorage implements IStorage {
     return category;
   }
 
-  async updateCashFlowCategory(id: string, updateCategory: Partial<InsertCashFlowCategory>): Promise<CashFlowCategory | undefined> {
+  async updateCashFlowCategory(id: string, updateCategory: Partial<InsertCashFlowCategory>, storeId: string): Promise<CashFlowCategory | undefined> {
     const existing = this.cashFlowCategories.get(id);
-    if (!existing) return undefined;
+    if (!existing || existing.storeId !== storeId) return undefined;
     
     const updated = { ...existing, ...updateCategory };
     this.cashFlowCategories.set(id, updated);
     return updated;
   }
 
-  async deleteCashFlowCategory(id: string): Promise<boolean> {
+  async deleteCashFlowCategory(id: string, storeId: string): Promise<boolean> {
+    const existing = this.cashFlowCategories.get(id);
+    if (!existing || existing.storeId !== storeId) return false;
+    
     return this.cashFlowCategories.delete(id);
   }
 
-  async getAllCashFlowCategories(): Promise<CashFlowCategory[]> {
-    return Array.from(this.cashFlowCategories.values());
+  async getAllCashFlowCategories(storeId: string): Promise<CashFlowCategory[]> {
+    return Array.from(this.cashFlowCategories.values()).filter(category => category.storeId === storeId);
   }
 
-  async getCashFlowCategoriesByType(type: 'income' | 'expense'): Promise<CashFlowCategory[]> {
+  async getCashFlowCategoriesByType(type: 'income' | 'expense', storeId: string): Promise<CashFlowCategory[]> {
     return Array.from(this.cashFlowCategories.values())
-      .filter(cat => cat.type === type && cat.isActive);
+      .filter(cat => cat.type === type && cat.storeId === storeId && cat.isActive);
   }
 
   // Enhanced Cash Flow Entry methods
-  async updateCashFlowEntry(id: string, updateEntry: Partial<InsertCashFlowEntry>): Promise<CashFlowEntry | undefined> {
+  async updateCashFlowEntry(id: string, updateEntry: Partial<InsertCashFlowEntry>, storeId: string): Promise<CashFlowEntry | undefined> {
     const index = this.cashFlowEntries.findIndex(entry => entry.id === id);
     if (index === -1) return undefined;
 
     const existing = this.cashFlowEntries[index];
+    if (existing.storeId !== storeId) return undefined;
+    
     const updated: CashFlowEntry = {
       ...existing,
       ...updateEntry,
@@ -750,38 +825,41 @@ export class MemStorage implements IStorage {
     return updated;
   }
 
-  async deleteCashFlowEntry(id: string): Promise<boolean> {
+  async deleteCashFlowEntry(id: string, storeId: string): Promise<boolean> {
     const index = this.cashFlowEntries.findIndex(entry => entry.id === id);
     if (index === -1) return false;
+    
+    const existing = this.cashFlowEntries[index];
+    if (existing.storeId !== storeId) return false;
     
     this.cashFlowEntries.splice(index, 1);
     return true;
   }
 
-  async getCashFlowEntriesByDateRange(startDate: Date, endDate: Date): Promise<CashFlowEntry[]> {
+  async getCashFlowEntriesByDateRange(startDate: Date, endDate: Date, storeId: string): Promise<CashFlowEntry[]> {
     return this.cashFlowEntries.filter(entry => 
-      entry.date >= startDate && entry.date <= endDate
+      entry.storeId === storeId && entry.date >= startDate && entry.date <= endDate
     ).sort((a, b) => b.date.getTime() - a.date.getTime());
   }
 
-  async getUnpaidCashFlowEntries(): Promise<CashFlowEntry[]> {
-    return this.cashFlowEntries.filter(entry => entry.paymentStatus === "unpaid")
+  async getUnpaidCashFlowEntries(storeId: string): Promise<CashFlowEntry[]> {
+    return this.cashFlowEntries.filter(entry => entry.storeId === storeId && entry.paymentStatus === "unpaid")
       .sort((a, b) => b.date.getTime() - a.date.getTime());
   }
 
-  async getCashFlowEntriesByCustomer(customerId: string): Promise<CashFlowEntry[]> {
-    return this.cashFlowEntries.filter(entry => entry.customerId === customerId)
+  async getCashFlowEntriesByCustomer(customerId: string, storeId: string): Promise<CashFlowEntry[]> {
+    return this.cashFlowEntries.filter(entry => entry.customerId === customerId && entry.storeId === storeId)
       .sort((a, b) => b.date.getTime() - a.date.getTime());
   }
 
   // Accounts Receivable
-  async getAccountsReceivable(): Promise<{
+  async getAccountsReceivable(storeId: string): Promise<{
     customerId: string;
     customerName: string;
     totalUnpaid: number;
     entries: CashFlowEntry[];
   }[]> {
-    const unpaidEntries = await this.getUnpaidCashFlowEntries();
+    const unpaidEntries = await this.getUnpaidCashFlowEntries(storeId);
     const customerGroups = new Map<string, CashFlowEntry[]>();
 
     // Group entries by customer

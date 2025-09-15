@@ -111,7 +111,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // User routes
-  app.get("/api/users", requireAuth, requireRole(["admin"]), async (req, res) => {
+  app.get("/api/users", requireAuth, requireRole(["administrator"]), async (req, res) => {
     try {
       const users = await storage.getAllUsers();
       const usersWithoutPasswords = users.map(({ password, ...user }) => user);
@@ -121,7 +121,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/users", requireAuth, requireRole(["admin"]), async (req, res) => {
+  app.post("/api/users", requireAuth, requireRole(["administrator"]), async (req, res) => {
     try {
       const userData = insertUserSchema.parse(req.body);
       const user = await storage.createUser(userData);
@@ -132,7 +132,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/users/:id", requireAuth, requireRole(["admin"]), async (req, res) => {
+  app.put("/api/users/:id", requireAuth, requireRole(["administrator"]), async (req, res) => {
     try {
       const { id } = req.params;
       const userData = insertUserSchema.partial().parse(req.body);
@@ -149,7 +149,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/users/:id", requireAuth, requireRole(["admin"]), async (req, res) => {
+  app.delete("/api/users/:id", requireAuth, requireRole(["administrator"]), async (req, res) => {
     try {
       const { id } = req.params;
       const success = await storage.deleteUser(id);
@@ -198,7 +198,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/products", requireAuth, requireRole(["admin", "manager"]), async (req, res) => {
+  app.post("/api/products", requireAuth, requireRole(["administrator", "owner", "administrasi"]), async (req, res) => {
     try {
       const productData = insertProductSchema.parse(req.body);
       const product = await storage.createProduct(productData);
@@ -208,7 +208,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/products/:id", requireAuth, requireRole(["admin", "manager"]), async (req, res) => {
+  app.put("/api/products/:id", requireAuth, requireRole(["administrator", "owner", "administrasi"]), async (req, res) => {
     try {
       const { id } = req.params;
       const productData = insertProductSchema.partial().parse(req.body);
@@ -224,7 +224,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/products/:id", requireAuth, requireRole(["admin", "manager"]), async (req, res) => {
+  app.delete("/api/products/:id", requireAuth, requireRole(["administrator", "owner", "administrasi"]), async (req, res) => {
     try {
       const { id } = req.params;
       const success = await storage.deleteProduct(id);
@@ -275,7 +275,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/customers/:id", requireAuth, requireRole(["admin", "manager"]), async (req, res) => {
+  app.delete("/api/customers/:id", requireAuth, requireRole(["administrator", "owner", "administrasi"]), async (req, res) => {
     try {
       const { id } = req.params;
       const success = await storage.deleteCustomer(id);
@@ -300,7 +300,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/suppliers", requireAuth, requireRole(["admin", "manager"]), async (req, res) => {
+  app.post("/api/suppliers", requireAuth, requireRole(["administrator", "owner", "administrasi"]), async (req, res) => {
     try {
       const supplierData = insertSupplierSchema.parse(req.body);
       const supplier = await storage.createSupplier(supplierData);
@@ -310,7 +310,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/suppliers/:id", requireAuth, requireRole(["admin", "manager"]), async (req, res) => {
+  app.put("/api/suppliers/:id", requireAuth, requireRole(["administrator", "owner", "administrasi"]), async (req, res) => {
     try {
       const { id } = req.params;
       const supplierData = insertSupplierSchema.partial().parse(req.body);
@@ -326,7 +326,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/suppliers/:id", requireAuth, requireRole(["admin", "manager"]), async (req, res) => {
+  app.delete("/api/suppliers/:id", requireAuth, requireRole(["administrator", "owner", "administrasi"]), async (req, res) => {
     try {
       const { id } = req.params;
       const success = await storage.deleteSupplier(id);
@@ -351,7 +351,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/categories", requireAuth, requireRole(["admin", "manager"]), async (req, res) => {
+  app.post("/api/categories", requireAuth, requireRole(["administrator", "owner", "administrasi"]), async (req, res) => {
     try {
       const categoryData = insertCategorySchema.parse(req.body);
       const category = await storage.createCategory(categoryData);
@@ -490,7 +490,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/cashflow/entries", requireAuth, async (req, res) => {
     try {
-      const entries = await storage.getCashFlowEntries();
+      const user = await storage.getUser(req.user.userId);
+      if (!user) {
+        return res.status(401).json({ message: "User not found" });
+      }
+      const entries = await storage.getCashFlowEntries(user.storeId);
       res.json(entries);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch cash flow entries" });
@@ -514,10 +518,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
       const entryData = insertCashFlowEntrySchema.partial().parse(req.body);
-      const entry = await storage.updateCashFlowEntry(id, entryData);
+      
+      const user = await storage.getUser(req.user.userId);
+      if (!user) {
+        return res.status(401).json({ message: "User not found" });
+      }
+      
+      const entry = await storage.updateCashFlowEntry(id, entryData, user.storeId);
       
       if (!entry) {
-        return res.status(404).json({ message: "Cash flow entry not found" });
+        return res.status(404).json({ message: "Cash flow entry not found or access denied" });
       }
       
       res.json(entry);
@@ -526,13 +536,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/cashflow/entries/:id", requireAuth, requireRole(["admin", "manager"]), async (req, res) => {
+  app.delete("/api/cashflow/entries/:id", requireAuth, requireRole(["administrator", "owner", "administrasi"]), async (req, res) => {
     try {
       const { id } = req.params;
-      const success = await storage.deleteCashFlowEntry(id);
+      
+      const user = await storage.getUser(req.user.userId);
+      if (!user) {
+        return res.status(401).json({ message: "User not found" });
+      }
+      
+      const success = await storage.deleteCashFlowEntry(id, user.storeId);
       
       if (!success) {
-        return res.status(404).json({ message: "Cash flow entry not found" });
+        return res.status(404).json({ message: "Cash flow entry not found or access denied" });
       }
       
       res.json({ message: "Cash flow entry deleted successfully" });
@@ -548,9 +564,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Start date and end date are required" });
       }
       
+      const user = await storage.getUser(req.user.userId);
+      if (!user) {
+        return res.status(401).json({ message: "User not found" });
+      }
+      
       const entries = await storage.getCashFlowEntriesByDateRange(
         new Date(startDate as string), 
-        new Date(endDate as string)
+        new Date(endDate as string),
+        user.storeId
       );
       res.json(entries);
     } catch (error) {
@@ -581,16 +603,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/cashflow/categories", requireAuth, async (req, res) => {
     try {
       const { type } = req.query;
+      const user = await storage.getUser(req.user.userId);
+      if (!user) {
+        return res.status(401).json({ message: "User not found" });
+      }
+      
       const categories = type 
-        ? await storage.getCashFlowCategoriesByType(type as 'income' | 'expense')
-        : await storage.getAllCashFlowCategories();
+        ? await storage.getCashFlowCategoriesByType(type as 'income' | 'expense', user.storeId)
+        : await storage.getAllCashFlowCategories(user.storeId);
       res.json(categories);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch cash flow categories" });
     }
   });
 
-  app.post("/api/cashflow/categories", requireAuth, requireRole(["admin", "manager"]), async (req, res) => {
+  app.post("/api/cashflow/categories", requireAuth, requireRole(["administrator", "owner", "administrasi"]), async (req, res) => {
     try {
       const categoryData = insertCashFlowCategorySchema.parse(req.body);
       const category = await storage.createCashFlowCategory(categoryData);
@@ -600,14 +627,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/cashflow/categories/:id", requireAuth, requireRole(["admin", "manager"]), async (req, res) => {
+  app.put("/api/cashflow/categories/:id", requireAuth, requireRole(["administrator", "owner", "administrasi"]), async (req, res) => {
     try {
       const { id } = req.params;
       const categoryData = insertCashFlowCategorySchema.partial().parse(req.body);
-      const category = await storage.updateCashFlowCategory(id, categoryData);
+      
+      const user = await storage.getUser(req.user.userId);
+      if (!user) {
+        return res.status(401).json({ message: "User not found" });
+      }
+      
+      const category = await storage.updateCashFlowCategory(id, categoryData, user.storeId);
       
       if (!category) {
-        return res.status(404).json({ message: "Category not found" });
+        return res.status(404).json({ message: "Category not found or access denied" });
       }
       
       res.json(category);
@@ -616,13 +649,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/cashflow/categories/:id", requireAuth, requireRole(["admin"]), async (req, res) => {
+  app.delete("/api/cashflow/categories/:id", requireAuth, requireRole(["administrator"]), async (req, res) => {
     try {
       const { id } = req.params;
-      const success = await storage.deleteCashFlowCategory(id);
+      
+      const user = await storage.getUser(req.user.userId);
+      if (!user) {
+        return res.status(401).json({ message: "User not found" });
+      }
+      
+      const success = await storage.deleteCashFlowCategory(id, user.storeId);
       
       if (!success) {
-        return res.status(404).json({ message: "Category not found" });
+        return res.status(404).json({ message: "Category not found or access denied" });
       }
       
       res.json({ message: "Category deleted successfully" });
@@ -634,7 +673,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Accounts Receivable routes
   app.get("/api/accounts-receivable", requireAuth, async (req, res) => {
     try {
-      const receivables = await storage.getAccountsReceivable();
+      const user = await storage.getUser(req.user.userId);
+      if (!user) {
+        return res.status(401).json({ message: "User not found" });
+      }
+      
+      const receivables = await storage.getAccountsReceivable(user.storeId);
       res.json(receivables);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch accounts receivable" });
@@ -645,14 +689,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/inventory/movements/:productId", requireAuth, async (req, res) => {
     try {
       const { productId } = req.params;
-      const movements = await storage.getInventoryMovements(productId);
+      const user = await storage.getUser(req.user.userId);
+      if (!user) {
+        return res.status(401).json({ message: "User not found" });
+      }
+      
+      const movements = await storage.getInventoryMovements(productId, user.storeId);
       res.json(movements);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch inventory movements" });
     }
   });
 
-  app.post("/api/inventory/adjustment", requireAuth, requireRole(["admin", "manager"]), async (req, res) => {
+  app.post("/api/inventory/adjustment", requireAuth, requireRole(["administrator", "owner", "administrasi"]), async (req, res) => {
     try {
       const { productId, quantity, reason } = req.body;
       

@@ -3,6 +3,18 @@ import { pgTable, text, varchar, decimal, integer, boolean, timestamp } from "dr
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+// Stores table for multi-store functionality
+export const stores = pgTable("stores", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  address: text("address"),
+  phone: text("phone"),
+  email: text("email"),
+  description: text("description"),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+});
+
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   username: text("username").notNull().unique(),
@@ -10,7 +22,8 @@ export const users = pgTable("users", {
   firstName: text("first_name").notNull(),
   lastName: text("last_name").notNull(),
   email: text("email").notNull().unique(),
-  role: text("role", { enum: ["admin", "cashier", "manager"] }).notNull().default("cashier"),
+  role: text("role", { enum: ["kasir", "administrasi", "owner", "administrator"] }).notNull().default("kasir"),
+  storeId: varchar("store_id").references(() => stores.id).notNull(),
   isActive: boolean("is_active").notNull().default(true),
 });
 
@@ -18,6 +31,7 @@ export const categories = pgTable("categories", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull(),
   description: text("description"),
+  storeId: varchar("store_id").references(() => stores.id).notNull(),
 });
 
 export const suppliers = pgTable("suppliers", {
@@ -27,6 +41,7 @@ export const suppliers = pgTable("suppliers", {
   phone: text("phone"),
   address: text("address"),
   contactPerson: text("contact_person"),
+  storeId: varchar("store_id").references(() => stores.id).notNull(),
 });
 
 export const customers = pgTable("customers", {
@@ -37,6 +52,7 @@ export const customers = pgTable("customers", {
   phone: text("phone"),
   address: text("address"),
   loyaltyPoints: integer("loyalty_points").notNull().default(0),
+  storeId: varchar("store_id").references(() => stores.id).notNull(),
 });
 
 export const products = pgTable("products", {
@@ -52,6 +68,7 @@ export const products = pgTable("products", {
   stock: decimal("stock", { precision: 10, scale: 3 }).notNull().default("0"),
   minStockLevel: decimal("min_stock_level", { precision: 10, scale: 3 }).notNull().default("5"),
   brand: text("brand"),
+  storeId: varchar("store_id").references(() => stores.id).notNull(),
   isActive: boolean("is_active").notNull().default(true),
 });
 
@@ -64,6 +81,7 @@ export const sales = pgTable("sales", {
   discount: decimal("discount", { precision: 10, scale: 2 }).notNull().default("0"),
   paymentMethod: text("payment_method", { enum: ["cash", "card", "digital"] }).notNull(),
   status: text("status", { enum: ["completed", "pending", "cancelled"] }).notNull().default("completed"),
+  storeId: varchar("store_id").references(() => stores.id).notNull(),
   saleDate: timestamp("sale_date").notNull().default(sql`now()`),
 });
 
@@ -83,6 +101,7 @@ export const inventoryMovements = pgTable("inventory_movements", {
   quantity: decimal("quantity", { precision: 10, scale: 3 }).notNull(),
   reason: text("reason").notNull(),
   userId: varchar("user_id").references(() => users.id).notNull(),
+  storeId: varchar("store_id").references(() => stores.id).notNull(),
   movementDate: timestamp("movement_date").notNull().default(sql`now()`),
 });
 
@@ -92,6 +111,7 @@ export const cashFlowCategories = pgTable("cash_flow_categories", {
   name: text("name").notNull(),
   type: text("type", { enum: ["income", "expense"] }).notNull(),
   description: text("description"),
+  storeId: varchar("store_id").references(() => stores.id).notNull(),
   isActive: boolean("is_active").notNull().default(true),
 });
 
@@ -119,12 +139,14 @@ export const cashFlowEntries = pgTable("cash_flow_entries", {
   // System fields
   isManualEntry: boolean("is_manual_entry").notNull().default(true),
   saleId: varchar("sale_id").references(() => sales.id), // Link to POS sales
+  storeId: varchar("store_id").references(() => stores.id).notNull(),
   
   userId: varchar("user_id").references(() => users.id).notNull(),
   date: timestamp("date").notNull().default(sql`now()`),
 });
 
 // Insert schemas
+export const insertStoreSchema = createInsertSchema(stores).omit({ id: true, createdAt: true });
 export const insertUserSchema = createInsertSchema(users).omit({ id: true });
 export const insertCategorySchema = createInsertSchema(categories).omit({ id: true });
 export const insertSupplierSchema = createInsertSchema(suppliers).omit({ id: true });
@@ -137,6 +159,8 @@ export const insertCashFlowCategorySchema = createInsertSchema(cashFlowCategorie
 export const insertCashFlowEntrySchema = createInsertSchema(cashFlowEntries).omit({ id: true, date: true });
 
 // Types
+export type Store = typeof stores.$inferSelect;
+export type InsertStore = z.infer<typeof insertStoreSchema>;
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type Category = typeof categories.$inferSelect;
