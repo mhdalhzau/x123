@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { getAuthHeaders } from "@/lib/auth";
+import { apiRequest } from "@/lib/queryClient";
 import { 
   TrendingUp, TrendingDown, DollarSign, Plus, Calendar, Receipt, 
   Package, User, CreditCard, Camera, StickyNote, Calculator,
@@ -96,39 +96,17 @@ export default function CashFlow() {
   // Fetch today's stats including sales
   const { data: todayStats } = useQuery<TodayStats>({
     queryKey: ["/api/cashflow/today"],
-    queryFn: async () => {
-      const response = await fetch("/api/cashflow/today", {
-        headers: getAuthHeaders(),
-      });
-      if (!response.ok) throw new Error("Failed to fetch today's stats");
-      return response.json();
-    },
   });
 
   // Fetch cash flow entries
   const { data: entries = [] } = useQuery<CashFlowEntry[]>({
     queryKey: ["/api/cashflow/entries"],
-    queryFn: async () => {
-      const response = await fetch("/api/cashflow/entries", {
-        headers: getAuthHeaders(),
-      });
-      if (!response.ok) throw new Error("Failed to fetch cash flow entries");
-      return response.json();
-    },
   });
 
   // Add cash flow entry mutation
   const addEntryMutation = useMutation({
     mutationFn: async (data: any) => {
-      const response = await fetch("/api/cashflow/entries", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...getAuthHeaders(),
-        },
-        body: JSON.stringify(data),
-      });
-      if (!response.ok) throw new Error("Failed to add cash flow entry");
+      const response = await apiRequest("POST", "/api/cashflow/entries", data);
       return response.json();
     },
     onSuccess: () => {
@@ -152,15 +130,7 @@ export default function CashFlow() {
   // Add customer mutation
   const addCustomerMutation = useMutation({
     mutationFn: async (data: any) => {
-      const response = await fetch("/api/customers", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...getAuthHeaders(),
-        },
-        body: JSON.stringify(data),
-      });
-      if (!response.ok) throw new Error("Failed to add customer");
+      const response = await apiRequest("POST", "/api/customers", data);
       return response.json();
     },
     onSuccess: (newCustomer) => {
@@ -269,37 +239,16 @@ export default function CashFlow() {
   // Fetch cash flow categories
   const { data: categories = [] } = useQuery<CashFlowCategory[]>({
     queryKey: ["/api/cashflow/categories"],
-    queryFn: async () => {
-      const response = await fetch("/api/cashflow/categories", {
-        headers: getAuthHeaders(),
-      });
-      if (!response.ok) throw new Error("Failed to fetch categories");
-      return response.json();
-    },
   });
 
   // Fetch products for integration
   const { data: products = [] } = useQuery<Product[]>({
     queryKey: ["/api/products"],
-    queryFn: async () => {
-      const response = await fetch("/api/products", {
-        headers: getAuthHeaders(),
-      });
-      if (!response.ok) throw new Error("Failed to fetch products");
-      return response.json();
-    },
   });
 
   // Fetch customers
   const { data: customers = [] } = useQuery<Customer[]>({
     queryKey: ["/api/customers"],
-    queryFn: async () => {
-      const response = await fetch("/api/customers", {
-        headers: getAuthHeaders(),
-      });
-      if (!response.ok) throw new Error("Failed to fetch customers");
-      return response.json();
-    },
   });
 
   // Filter categories by type

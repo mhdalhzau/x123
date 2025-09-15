@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { getAuthHeaders } from "@/lib/auth";
+import { apiRequest } from "@/lib/queryClient";
 import { type Product, type Category } from "@shared/schema";
 
 interface ProductModalProps {
@@ -69,16 +69,7 @@ export default function ProductModal({ isOpen, onClose, product, categories }: P
       const url = product ? `/api/products/${product.id}` : "/api/products";
       const method = product ? "PUT" : "POST";
       
-      const response = await fetch(url, {
-        method,
-        headers: {
-          "Content-Type": "application/json",
-          ...getAuthHeaders(),
-        },
-        body: JSON.stringify(productData),
-      });
-      
-      if (!response.ok) throw new Error("Failed to save product");
+      const response = await apiRequest(method, url, productData);
       return response.json();
     },
     onSuccess: () => {

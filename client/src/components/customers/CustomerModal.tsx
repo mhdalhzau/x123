@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { getAuthHeaders } from "@/lib/auth";
+import { apiRequest } from "@/lib/queryClient";
 import { type Customer } from "@shared/schema";
 
 interface CustomerModalProps {
@@ -55,16 +55,7 @@ export default function CustomerModal({ isOpen, onClose, customer }: CustomerMod
       const url = customer ? `/api/customers/${customer.id}` : "/api/customers";
       const method = customer ? "PUT" : "POST";
       
-      const response = await fetch(url, {
-        method,
-        headers: {
-          "Content-Type": "application/json",
-          ...getAuthHeaders(),
-        },
-        body: JSON.stringify(customerData),
-      });
-      
-      if (!response.ok) throw new Error("Failed to save customer");
+      const response = await apiRequest(method, url, customerData);
       return response.json();
     },
     onSuccess: () => {
