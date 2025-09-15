@@ -6,7 +6,8 @@ import {
   type Product, type InsertProduct,
   type Sale, type InsertSale,
   type SaleItem, type InsertSaleItem,
-  type InventoryMovement, type InsertInventoryMovement
+  type InventoryMovement, type InsertInventoryMovement,
+  type CashFlowEntry, type InsertCashFlowEntry
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 
@@ -56,6 +57,9 @@ export interface IStorage {
   getSalesByDateRange(startDate: Date, endDate: Date): Promise<Sale[]>;
   getSalesByUser(userId: string): Promise<Sale[]>;
   getAllSales(): Promise<Sale[]>;
+  
+  // Atomic sales processing
+  processSaleAtomic(sale: InsertSale, items: { productId: string; quantity: number; unitPrice: string; total: string }[]): Promise<{ sale: Sale; items: SaleItem[]; error?: string }>;
 
   // Sale Items
   getSaleItems(saleId: string): Promise<SaleItem[]>;
@@ -65,6 +69,18 @@ export interface IStorage {
   createInventoryMovement(movement: InsertInventoryMovement): Promise<InventoryMovement>;
   getInventoryMovements(productId: string): Promise<InventoryMovement[]>;
   updateProductStock(productId: string, quantity: number): Promise<boolean>;
+
+  // Cash Flow
+  createCashFlowEntry(entry: InsertCashFlowEntry): Promise<CashFlowEntry>;
+  getCashFlowEntries(): Promise<CashFlowEntry[]>;
+  getCashFlowEntriesByDate(date: Date): Promise<CashFlowEntry[]>;
+  getTodayCashFlowStats(): Promise<{
+    totalSales: number;
+    salesCount: number;
+    totalIncome: number;
+    totalExpenses: number;
+    netFlow: number;
+  }>;
 
   // Dashboard stats
   getDashboardStats(): Promise<{
@@ -85,6 +101,7 @@ export class MemStorage implements IStorage {
   private sales: Map<string, Sale> = new Map();
   private saleItems: Map<string, SaleItem[]> = new Map();
   private inventoryMovements: Map<string, InventoryMovement[]> = new Map();
+  private cashFlowEntries: CashFlowEntry[] = [];
 
   constructor() {
     this.initializeData();
@@ -131,8 +148,8 @@ export class MemStorage implements IStorage {
       supplierId: null,
       purchasePrice: "60.00",
       sellingPrice: "89.99",
-      stock: 45,
-      minStockLevel: 5,
+      stock: "45.000",
+      minStockLevel: "5.000",
       brand: "AudioTech",
       isActive: true,
     });
@@ -148,8 +165,8 @@ export class MemStorage implements IStorage {
       supplierId: null,
       purchasePrice: "8.00",
       sellingPrice: "19.99",
-      stock: 128,
-      minStockLevel: 10,
+      stock: "128.000",
+      minStockLevel: "10.000",
       brand: "ProtectiveGear",
       isActive: true,
     });
@@ -231,7 +248,14 @@ export class MemStorage implements IStorage {
 
   async createSupplier(insertSupplier: InsertSupplier): Promise<Supplier> {
     const id = randomUUID();
-    const supplier: Supplier = { ...insertSupplier, id };
+    const supplier: Supplier = { 
+      ...insertSupplier, 
+      id,
+      email: insertSupplier.email ?? null,
+      phone: insertSupplier.phone ?? null,
+      address: insertSupplier.address ?? null,
+      contactPerson: insertSupplier.contactPerson ?? null
+    };
     this.suppliers.set(id, supplier);
     return supplier;
   }
@@ -259,7 +283,14 @@ export class MemStorage implements IStorage {
 
   async createCustomer(insertCustomer: InsertCustomer): Promise<Customer> {
     const id = randomUUID();
-    const customer: Customer = { ...insertCustomer, id };
+    const customer: Customer = { 
+      ...insertCustomer, 
+      id,
+      email: insertCustomer.email ?? null,
+      phone: insertCustomer.phone ?? null,
+      address: insertCustomer.address ?? null,
+      loyaltyPoints: insertCustomer.loyaltyPoints ?? 0
+    };
     this.customers.set(id, customer);
     return customer;
   }
@@ -295,7 +326,18 @@ export class MemStorage implements IStorage {
 
   async createProduct(insertProduct: InsertProduct): Promise<Product> {
     const id = randomUUID();
-    const product: Product = { ...insertProduct, id };
+    const product: Product = { 
+      ...insertProduct, 
+      id,
+      description: insertProduct.description ?? null,
+      barcode: insertProduct.barcode ?? null,
+      categoryId: insertProduct.categoryId ?? null,
+      supplierId: insertProduct.supplierId ?? null,
+      brand: insertProduct.brand ?? null,
+      stock: insertProduct.stock ?? "0.000",
+      minStockLevel: insertProduct.minStockLevel ?? "5.000",
+      isActive: insertProduct.isActive ?? true
+    };
     this.products.set(id, product);
     return product;
   }
@@ -317,7 +359,9 @@ export class MemStorage implements IStorage {
   }
 
   async getLowStockProducts(): Promise<Product[]> {
-    return Array.from(this.products.values()).filter(product => product.stock <= product.minStockLevel);
+    return Array.from(this.products.values()).filter(product => 
+      parseFloat(product.stock) <= parseFloat(product.minStockLevel)
+    );
   }
 
   // Sales
@@ -394,7 +438,9 @@ export class MemStorage implements IStorage {
     const product = this.products.get(productId);
     if (!product) return false;
     
-    const updatedProduct = { ...product, stock: product.stock + quantity };
+    const currentStock = parseFloat(product.stock);
+    const newStock = currentStock + quantity;
+    const updatedProduct = { ...product, stock: newStock.toFixed(3) };
     this.products.set(productId, updatedProduct);
     return true;
   }
@@ -422,6 +468,144 @@ export class MemStorage implements IStorage {
       totalProducts,
       lowStockCount,
       totalCustomers,
+    };
+  }
+
+  // Atomic sales processing - ensures all operations succeed or none do
+  async processSaleAtomic(saleData: InsertSale, items: { productId: string; quantity: number; unitPrice: string; total: string }[]): Promise<{ sale: Sale; items: SaleItem[]; error?: string }> {
+    // Step 1: Validate stock availability for all items
+    const stockValidation: { productId: string; product: Product; requestedQty: number }[] = [];
+    
+    for (const item of items) {
+      const product = this.products.get(item.productId);
+      if (!product) {
+        return { sale: {} as Sale, items: [], error: `Product ${item.productId} not found` };
+      }
+      
+      const currentStock = parseFloat(product.stock);
+      if (currentStock < item.quantity) {
+        return { 
+          sale: {} as Sale, 
+          items: [], 
+          error: `Insufficient stock for ${product.name}. Available: ${currentStock}, Requested: ${item.quantity}` 
+        };
+      }
+      
+      stockValidation.push({ productId: item.productId, product, requestedQty: item.quantity });
+    }
+    
+    // Step 2: Create backup of current state for rollback
+    const originalProducts = new Map(this.products);
+    
+    try {
+      // Step 3: Create the sale
+      const sale = await this.createSale(saleData);
+      
+      // Step 4: Process all items and update inventory atomically
+      const saleItems: SaleItem[] = [];
+      
+      for (const item of items) {
+        // Create sale item
+        const saleItem = await this.createSaleItem({
+          saleId: sale.id,
+          productId: item.productId,
+          quantity: item.quantity.toString(),
+          unitPrice: item.unitPrice,
+          total: item.total
+        });
+        saleItems.push(saleItem);
+        
+        // Update product stock
+        await this.updateProductStock(item.productId, -item.quantity);
+        
+        // Create inventory movement
+        await this.createInventoryMovement({
+          productId: item.productId,
+          type: "out",
+          quantity: item.quantity.toString(),
+          reason: `Sale #${sale.id}`,
+          userId: saleData.userId
+        });
+      }
+      
+      return { sale, items: saleItems };
+      
+    } catch (error) {
+      // Step 5: Rollback on error
+      this.products = originalProducts;
+      return { 
+        sale: {} as Sale, 
+        items: [], 
+        error: error instanceof Error ? error.message : "Unknown error during sales processing" 
+      };
+    }
+  }
+
+  // Cash Flow methods
+  async createCashFlowEntry(insertEntry: InsertCashFlowEntry): Promise<CashFlowEntry> {
+    const id = randomUUID();
+    const entry: CashFlowEntry = {
+      ...insertEntry,
+      id,
+      date: new Date()
+    };
+    this.cashFlowEntries.push(entry);
+    return entry;
+  }
+
+  async getCashFlowEntries(): Promise<CashFlowEntry[]> {
+    return [...this.cashFlowEntries].sort((a, b) => b.date.getTime() - a.date.getTime());
+  }
+
+  async getCashFlowEntriesByDate(date: Date): Promise<CashFlowEntry[]> {
+    const startOfDay = new Date(date);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(date);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    return this.cashFlowEntries.filter(entry => 
+      entry.date >= startOfDay && entry.date <= endOfDay
+    );
+  }
+
+  async getTodayCashFlowStats(): Promise<{
+    totalSales: number;
+    salesCount: number;
+    totalIncome: number;
+    totalExpenses: number;
+    netFlow: number;
+  }> {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    // Get today's sales
+    const todaySales = Array.from(this.sales.values())
+      .filter(sale => sale.saleDate >= today && sale.saleDate < tomorrow);
+    
+    const totalSales = todaySales.reduce((sum, sale) => sum + parseFloat(sale.total), 0);
+    const salesCount = todaySales.length;
+
+    // Get today's cash flow entries
+    const todayEntries = await this.getCashFlowEntriesByDate(today);
+    
+    const totalIncome = todayEntries
+      .filter(entry => entry.type === "income")
+      .reduce((sum, entry) => sum + parseFloat(entry.amount), totalSales);
+    
+    const totalExpenses = todayEntries
+      .filter(entry => entry.type === "expense")
+      .reduce((sum, entry) => sum + parseFloat(entry.amount), 0);
+    
+    const netFlow = totalIncome - totalExpenses;
+
+    return {
+      totalSales,
+      salesCount,
+      totalIncome,
+      totalExpenses,
+      netFlow
     };
   }
 }

@@ -3,8 +3,11 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { getAuthHeaders } from "@/lib/auth";
+import { ShoppingCart as CartIcon, CreditCard, Banknote, Smartphone, Pause, Trash2, Minus, Plus, Receipt } from "lucide-react";
 
 interface CartItem {
   id: string;
@@ -30,6 +33,8 @@ export default function ShoppingCart({
 }: ShoppingCartProps) {
   const [paymentMethod, setPaymentMethod] = useState<"cash" | "card" | "digital">("cash");
   const [selectedCustomer, setSelectedCustomer] = useState<string>("walk-in");
+  const [editingQuantity, setEditingQuantity] = useState<string | null>(null);
+  const [tempQuantity, setTempQuantity] = useState<string>("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -116,7 +121,7 @@ export default function ShoppingCart({
         <div className="space-y-3 mb-6 max-h-64 overflow-y-auto">
           {items.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
-              <i className="fas fa-shopping-cart text-4xl mb-4"></i>
+              <CartIcon className="w-16 h-16 mx-auto mb-4" />
               <p>Cart is empty</p>
               <p className="text-sm">Add products to start a sale</p>
             </div>
@@ -134,22 +139,57 @@ export default function ShoppingCart({
                     variant="outline"
                     size="sm"
                     className="w-6 h-6 p-0"
-                    onClick={() => onUpdateQuantity(item.id, item.quantity - 1)}
+                    onClick={() => onUpdateQuantity(item.id, Math.max(0, item.quantity - 0.1))}
                     data-testid={`decrease-${item.id}`}
                   >
-                    -
+                    <Minus className="w-3 h-3" />
                   </Button>
-                  <span className="w-8 text-center text-sm" data-testid={`quantity-${item.id}`}>
-                    {item.quantity}
-                  </span>
+                  {editingQuantity === item.id ? (
+                    <Input
+                      type="number"
+                      step="0.001"
+                      min="0.001"
+                      value={tempQuantity}
+                      onChange={(e) => setTempQuantity(e.target.value)}
+                      onBlur={() => {
+                        const newQty = parseFloat(tempQuantity);
+                        if (!isNaN(newQty) && newQty > 0) {
+                          onUpdateQuantity(item.id, newQty);
+                        }
+                        setEditingQuantity(null);
+                      }}
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter') {
+                          const newQty = parseFloat(tempQuantity);
+                          if (!isNaN(newQty) && newQty > 0) {
+                            onUpdateQuantity(item.id, newQty);
+                          }
+                          setEditingQuantity(null);
+                        }
+                      }}
+                      className="w-16 h-6 text-center text-sm px-1"
+                      autoFocus
+                    />
+                  ) : (
+                    <span 
+                      className="w-16 text-center text-sm cursor-pointer hover:bg-muted rounded px-1" 
+                      data-testid={`quantity-${item.id}`}
+                      onClick={() => {
+                        setEditingQuantity(item.id);
+                        setTempQuantity(item.quantity.toString());
+                      }}
+                    >
+                      {item.quantity % 1 === 0 ? item.quantity : item.quantity.toFixed(3)}
+                    </span>
+                  )}
                   <Button
                     variant="outline"
                     size="sm"
                     className="w-6 h-6 p-0"
-                    onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
+                    onClick={() => onUpdateQuantity(item.id, item.quantity + 0.1)}
                     data-testid={`increase-${item.id}`}
                   >
-                    +
+                    <Plus className="w-3 h-3" />
                   </Button>
                 </div>
                 <div className="text-right ml-3">
@@ -217,7 +257,7 @@ export default function ShoppingCart({
                   onClick={() => setPaymentMethod("cash")}
                   data-testid="payment-cash"
                 >
-                  <i className="fas fa-money-bill-wave mb-1"></i>
+                  <Banknote className="w-4 h-4 mb-1" />
                   <span className="text-xs">Cash</span>
                 </Button>
                 <Button
@@ -226,7 +266,7 @@ export default function ShoppingCart({
                   onClick={() => setPaymentMethod("card")}
                   data-testid="payment-card"
                 >
-                  <i className="fas fa-credit-card mb-1"></i>
+                  <CreditCard className="w-4 h-4 mb-1" />
                   <span className="text-xs">Card</span>
                 </Button>
                 <Button
@@ -235,7 +275,7 @@ export default function ShoppingCart({
                   onClick={() => setPaymentMethod("digital")}
                   data-testid="payment-digital"
                 >
-                  <i className="fas fa-mobile-alt mb-1"></i>
+                  <Smartphone className="w-4 h-4 mb-1" />
                   <span className="text-xs">Digital</span>
                 </Button>
               </div>
@@ -245,29 +285,63 @@ export default function ShoppingCart({
 
         {/* Action Buttons */}
         <div className="space-y-3">
-          <Button
-            className="w-full"
-            onClick={handleProcessPayment}
-            disabled={items.length === 0 || processSaleMutation.isPending}
-            data-testid="button-process-payment"
-          >
-            {processSaleMutation.isPending ? (
-              <>
-                <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2"></div>
-                Processing...
-              </>
-            ) : (
-              <>
-                <i className="fas fa-credit-card mr-2"></i>
-                Process Payment
-              </>
-            )}
-          </Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                className="w-full"
+                disabled={items.length === 0 || processSaleMutation.isPending}
+                data-testid="button-process-payment"
+              >
+                {processSaleMutation.isPending ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2"></div>
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <CreditCard className="mr-2 w-4 h-4" />
+                    Process Payment
+                  </>
+                )}
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Confirm Payment</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Are you sure you want to process this payment of ${total.toFixed(2)} via {paymentMethod}?
+                  <div className="mt-2 p-3 bg-muted rounded">
+                    <div className="text-sm space-y-1">
+                      <div className="flex justify-between">
+                        <span>Subtotal:</span>
+                        <span>${subtotal.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Tax (8.5%):</span>
+                        <span>${tax.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between font-bold">
+                        <span>Total:</span>
+                        <span>${total.toFixed(2)}</span>
+                      </div>
+                    </div>
+                  </div>
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleProcessPayment}>
+                  <Receipt className="mr-2 w-4 h-4" />
+                  Confirm & Print Receipt
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
           
           {items.length > 0 && (
             <div className="grid grid-cols-2 gap-3">
               <Button variant="secondary" size="sm" data-testid="button-hold">
-                <i className="fas fa-pause mr-1"></i>
+                <Pause className="mr-1 w-4 h-4" />
                 Hold
               </Button>
               <Button 
@@ -276,7 +350,7 @@ export default function ShoppingCart({
                 onClick={onClearCart}
                 data-testid="button-clear"
               >
-                <i className="fas fa-trash mr-1"></i>
+                <Trash2 className="mr-1 w-4 h-4" />
                 Clear
               </Button>
             </div>

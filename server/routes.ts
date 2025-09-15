@@ -10,7 +10,8 @@ import {
   insertProductSchema,
   insertSaleSchema,
   insertSaleItemSchema,
-  insertInventoryMovementSchema
+  insertInventoryMovementSchema,
+  insertCashFlowEntrySchema
 } from "@shared/schema";
 
 declare global {
@@ -397,9 +398,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(400).json({ message: `Product ${item.productId} not found` });
         }
         
-        if (product.stock < item.quantity) {
+        if (!product.isActive) {
+          return res.status(400).json({ message: `Product ${product.name} is not active` });
+        }
+        
+        const currentStock = parseFloat(product.stock);
+        if (currentStock < item.quantity) {
           return res.status(400).json({ 
-            message: `Insufficient stock for ${product.name}. Available: ${product.stock}, Requested: ${item.quantity}` 
+            message: `Insufficient stock for ${product.name}. Available: ${currentStock.toFixed(3)}, Requested: ${item.quantity}` 
           });
         }
         
@@ -434,36 +440,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Validate sale data
       const validatedSaleData = insertSaleSchema.parse(saleData);
       
-      // Create the sale (this should be wrapped in a transaction in a real implementation)
-      const sale = await storage.createSale(validatedSaleData);
+      // Process sale atomically - all operations succeed or none do
+      const result = await storage.processSaleAtomic(validatedSaleData, validatedItems);
       
-      // Create sale items and update inventory
-      for (const item of validatedItems) {
-        const saleItem = insertSaleItemSchema.parse({
-          ...item,
-          saleId: sale.id
-        });
-        
-        await storage.createSaleItem(saleItem);
-        
-        // Update product stock
-        await storage.updateProductStock(item.productId, -item.quantity);
-        
-        // Create inventory movement
-        await storage.createInventoryMovement({
-          productId: item.productId,
-          type: "out",
-          quantity: item.quantity,
-          reason: `Sale #${sale.id}`,
-          userId: req.user!.userId
-        });
+      if (result.error) {
+        return res.status(400).json({ message: result.error });
       }
       
       res.status(201).json({
-        ...sale,
+        ...result.sale,
         calculatedSubtotal: subtotal.toFixed(2),
         calculatedTax: tax.toFixed(2),
-        calculatedTotal: total.toFixed(2)
+        calculatedTotal: total.toFixed(2),
+        receiptData: {
+          items: result.items,
+          timestamp: new Date().toISOString(),
+          receiptNumber: result.sale.id
+        }
       });
     } catch (error) {
       console.error("Sale processing error:", error);
@@ -481,6 +474,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(items);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch sale items" });
+    }
+  });
+
+  // Cash Flow routes
+  app.get("/api/cashflow/today", requireAuth, async (req, res) => {
+    try {
+      const stats = await storage.getTodayCashFlowStats();
+      res.json(stats);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch today's cash flow stats" });
+    }
+  });
+
+  app.get("/api/cashflow/entries", requireAuth, async (req, res) => {
+    try {
+      const entries = await storage.getCashFlowEntries();
+      res.json(entries);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch cash flow entries" });
+    }
+  });
+
+  app.post("/api/cashflow/entries", requireAuth, async (req, res) => {
+    try {
+      const entryData = insertCashFlowEntrySchema.parse({
+        ...req.body,
+        userId: req.user!.userId
+      });
+      const entry = await storage.createCashFlowEntry(entryData);
+      res.status(201).json(entry);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid cash flow entry data" });
     }
   });
 

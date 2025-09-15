@@ -86,6 +86,16 @@ export const inventoryMovements = pgTable("inventory_movements", {
   movementDate: timestamp("movement_date").notNull().default(sql`now()`),
 });
 
+export const cashFlowEntries = pgTable("cash_flow_entries", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  type: text("type", { enum: ["income", "expense"] }).notNull(),
+  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+  description: text("description").notNull(),
+  category: text("category").notNull(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  date: timestamp("date").notNull().default(sql`now()`),
+});
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({ id: true });
 export const insertCategorySchema = createInsertSchema(categories).omit({ id: true });
@@ -95,6 +105,7 @@ export const insertProductSchema = createInsertSchema(products).omit({ id: true 
 export const insertSaleSchema = createInsertSchema(sales).omit({ id: true, saleDate: true });
 export const insertSaleItemSchema = createInsertSchema(saleItems).omit({ id: true });
 export const insertInventoryMovementSchema = createInsertSchema(inventoryMovements).omit({ id: true, movementDate: true });
+export const insertCashFlowEntrySchema = createInsertSchema(cashFlowEntries).omit({ id: true, date: true });
 
 // Types
 export type User = typeof users.$inferSelect;
@@ -113,6 +124,8 @@ export type SaleItem = typeof saleItems.$inferSelect;
 export type InsertSaleItem = z.infer<typeof insertSaleItemSchema>;
 export type InventoryMovement = typeof inventoryMovements.$inferSelect;
 export type InsertInventoryMovement = z.infer<typeof insertInventoryMovementSchema>;
+export type CashFlowEntry = typeof cashFlowEntries.$inferSelect;
+export type InsertCashFlowEntry = z.infer<typeof insertCashFlowEntrySchema>;
 
 // Auth schemas
 export const loginSchema = z.object({

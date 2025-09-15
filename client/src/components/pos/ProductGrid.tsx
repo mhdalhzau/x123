@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { getAuthHeaders } from "@/lib/auth";
 import { type Product } from "@shared/schema";
+import { Search, Scan, Headphones, Smartphone, Laptop, Mouse, Keyboard, Package } from "lucide-react";
 
 interface ProductGridProps {
   searchTerm: string;
@@ -47,12 +48,12 @@ export default function ProductGrid({
 
   const getProductIcon = (name: string) => {
     const nameLower = name.toLowerCase();
-    if (nameLower.includes("headphone")) return "fas fa-headphones";
-    if (nameLower.includes("phone") || nameLower.includes("case")) return "fas fa-mobile-alt";
-    if (nameLower.includes("laptop") || nameLower.includes("stand")) return "fas fa-laptop";
-    if (nameLower.includes("mouse")) return "fas fa-mouse";
-    if (nameLower.includes("keyboard")) return "fas fa-keyboard";
-    return "fas fa-cube";
+    if (nameLower.includes("headphone")) return Headphones;
+    if (nameLower.includes("phone") || nameLower.includes("case")) return Smartphone;
+    if (nameLower.includes("laptop") || nameLower.includes("stand")) return Laptop;
+    if (nameLower.includes("mouse")) return Mouse;
+    if (nameLower.includes("keyboard")) return Keyboard;
+    return Package;
   };
 
   const getProductGradient = (index: number) => {
@@ -113,10 +114,10 @@ export default function ProductGrid({
                 className="pl-12"
                 data-testid="product-search"
               />
-              <i className="fas fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground"></i>
+              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
             </div>
             <Button className="px-6" data-testid="button-scan">
-              <i className="fas fa-barcode mr-2"></i>
+              <Scan className="mr-2 w-4 h-4" />
               Scan
             </Button>
           </div>
@@ -144,13 +145,20 @@ export default function ProductGrid({
         {filteredProducts.map((product: Product, index: number) => (
           <Card
             key={product.id}
-            className="hover:shadow-md transition-shadow cursor-pointer"
-            onClick={() => onAddToCart(product)}
+            className={`hover:shadow-md transition-shadow ${
+              parseFloat(product.stock) <= 0 
+                ? "opacity-50 cursor-not-allowed" 
+                : "cursor-pointer"
+            }`}
+            onClick={() => parseFloat(product.stock) > 0 && onAddToCart(product)}
             data-testid={`product-${product.sku}`}
           >
             <CardContent className="p-4">
               <div className={`w-full h-32 bg-gradient-to-br ${getProductGradient(index)} rounded-lg mb-3 flex items-center justify-center`}>
-                <i className={`${getProductIcon(product.name)} text-3xl text-gray-700`}></i>
+                {(() => {
+                  const IconComponent = getProductIcon(product.name);
+                  return <IconComponent className="w-12 h-12 text-gray-700" />;
+                })()}
               </div>
               <h4 className="font-medium text-foreground mb-1" data-testid={`product-name-${product.id}`}>
                 {product.name}
@@ -161,11 +169,17 @@ export default function ProductGrid({
                   ${product.sellingPrice}
                 </span>
                 <span className={`text-xs px-2 py-1 rounded ${
-                  product.stock > product.minStockLevel 
+                  parseFloat(product.stock) <= 0
+                    ? "bg-red-100 text-red-800"
+                    : parseFloat(product.stock) > parseFloat(product.minStockLevel) 
                     ? "bg-green-100 text-green-800" 
                     : "bg-yellow-100 text-yellow-800"
                 }`}>
-                  {product.stock > product.minStockLevel ? "In Stock" : "Low Stock"}
+                  {parseFloat(product.stock) <= 0 
+                    ? "Out of Stock" 
+                    : parseFloat(product.stock) > parseFloat(product.minStockLevel) 
+                    ? "In Stock" 
+                    : "Low Stock"}
                 </span>
               </div>
             </CardContent>

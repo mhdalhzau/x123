@@ -13,6 +13,7 @@ import Suppliers from "./pages/Suppliers";
 import Inventory from "./pages/Inventory";
 import Reports from "./pages/Reports";
 import Users from "./pages/Users";
+import CashFlow from "./pages/CashFlow";
 import Sidebar from "./components/layout/Sidebar";
 import Header from "./components/layout/Header";
 import NotFound from "@/pages/not-found";
@@ -49,6 +50,7 @@ function AppContent() {
           <Route path="/suppliers" component={Suppliers} />
           <Route path="/inventory" component={Inventory} />
           <Route path="/reports" component={Reports} />
+          <Route path="/cashflow" component={CashFlow} />
           <Route path="/users" component={Users} />
           <Route component={NotFound} />
         </Switch>
