@@ -15,6 +15,14 @@ const StoreContext = createContext<StoreContextType | undefined>(undefined);
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [currentStore, setCurrentStore] = useState<Store | null>(null);
 
+  // Initialize store ID from localStorage immediately to prevent header race condition
+  useEffect(() => {
+    const savedStoreId = localStorage.getItem('currentStoreId');
+    if (savedStoreId) {
+      setCurrentStoreId(savedStoreId);
+    }
+  }, []);
+
   // Fetch all stores
   const { data: stores = [], isLoading } = useQuery<Store[]>({
     queryKey: ['/api/stores'],

@@ -11,6 +11,11 @@ async function throwIfResNotOk(res: Response) {
 // Global store context - set by StoreProvider
 let currentStoreId: string | null = null;
 
+// Initialize from localStorage immediately
+if (typeof window !== 'undefined') {
+  currentStoreId = localStorage.getItem('currentStoreId');
+}
+
 export function setCurrentStoreId(storeId: string | null) {
   currentStoreId = storeId;
 }
@@ -21,9 +26,9 @@ export function getCurrentStoreId(): string | null {
 
 function getStoreHeaders(): Record<string, string> {
   const headers: Record<string, string> = {};
-  if (currentStoreId) {
-    headers['x-store-id'] = currentStoreId;
-  }
+  // Always include a store ID - use saved one or fallback to default
+  const storeId = currentStoreId || localStorage.getItem('currentStoreId') || '70bf2a87-2b5a-4d0c-a2ad-22ae1907e86f';
+  headers['x-store-id'] = storeId;
   return headers;
 }
 
