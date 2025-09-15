@@ -106,12 +106,14 @@ export default function Users() {
 
   const getRoleBadgeColor = (role: string) => {
     switch (role) {
-      case "admin":
+      case "administrator":
         return "bg-red-100 text-red-800";
-      case "manager":
-        return "bg-blue-100 text-blue-800";
-      case "cashier":
+      case "owner":
+        return "bg-purple-100 text-purple-800";
+      case "administrasi":
         return "bg-green-100 text-green-800";
+      case "kasir":
+        return "bg-blue-100 text-blue-800";
       default:
         return "bg-gray-100 text-gray-800";
     }
@@ -119,11 +121,13 @@ export default function Users() {
 
   const getRoleIcon = (role: string) => {
     switch (role) {
-      case "admin":
+      case "administrator":
         return <Crown className="w-4 h-4" />;
-      case "manager":
+      case "owner":
+        return <Crown className="w-4 h-4" />;
+      case "administrasi":
         return <UserCheck className="w-4 h-4" />;
-      case "cashier":
+      case "kasir":
         return <Calculator className="w-4 h-4" />;
       default:
         return <UserIcon className="w-4 h-4" />;
@@ -213,7 +217,7 @@ export default function Users() {
               <div>
                 <p className="text-muted-foreground text-sm font-medium">Administrators</p>
                 <p className="text-2xl font-bold text-foreground" data-testid="stat-admin-users">
-                  {users.filter((u: User) => u.role === "admin").length}
+                  {users.filter((u: User) => u.role === "administrator").length}
                 </p>
               </div>
               <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
@@ -227,9 +231,9 @@ export default function Users() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-muted-foreground text-sm font-medium">Managers</p>
-                <p className="text-2xl font-bold text-foreground" data-testid="stat-manager-users">
-                  {users.filter((u: User) => u.role === "manager").length}
+                <p className="text-muted-foreground text-sm font-medium">Owners</p>
+                <p className="text-2xl font-bold text-foreground" data-testid="stat-owner-users">
+                  {users.filter((u: User) => u.role === "owner").length}
                 </p>
               </div>
               <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
@@ -243,9 +247,9 @@ export default function Users() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-muted-foreground text-sm font-medium">Cashiers</p>
-                <p className="text-2xl font-bold text-foreground" data-testid="stat-cashier-users">
-                  {users.filter((u: User) => u.role === "cashier").length}
+                <p className="text-muted-foreground text-sm font-medium">Kasir</p>
+                <p className="text-2xl font-bold text-foreground" data-testid="stat-kasir-users">
+                  {users.filter((u: User) => u.role === "kasir").length}
                 </p>
               </div>
               <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">

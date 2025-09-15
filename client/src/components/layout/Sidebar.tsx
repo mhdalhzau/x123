@@ -43,7 +43,7 @@ export default function Sidebar() {
 
   const filteredNavigation = navigation.filter(item => {
     if (item.href === "/settings") {
-      return user?.role === "admin";
+      return user?.role === "administrator";
     }
     return true;
   });
