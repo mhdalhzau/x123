@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import { 
   loginSchema,
   insertUserSchema,
+  insertStoreSchema,
   insertCategorySchema,
   insertSupplierSchema,
   insertCustomerSchema,
@@ -19,6 +20,7 @@ declare global {
   namespace Express {
     interface Request {
       user?: { userId: string; username: string; role: string };
+      storeId?: string;
     }
   }
 }
@@ -37,6 +39,47 @@ function requireAuth(req: any, res: any, next: any) {
   
   req.user = session;
   next();
+}
+
+// Middleware to extract and validate store ID
+function requireStore(req: any, res: any, next: any) {
+  const storeId = req.headers['x-store-id'];
+  
+  if (!storeId) {
+    return res.status(400).json({ message: "Store ID is required" });
+  }
+  
+  req.storeId = storeId;
+  next();
+}
+
+// Middleware to validate store ownership (users can only access their assigned store)
+async function validateStoreAccess(req: any, res: any, next: any) {
+  try {
+    if (!req.user || !req.storeId) {
+      return res.status(401).json({ message: "Authentication and store context required" });
+    }
+
+    // Administrator role can access any store
+    if (req.user.role === 'administrator') {
+      return next();
+    }
+
+    // Get user details to check their assigned store
+    const user = await storage.getUser(req.user.userId);
+    if (!user) {
+      return res.status(401).json({ message: "User not found" });
+    }
+
+    // Check if user's assigned store matches the requested store
+    if (user.storeId !== req.storeId) {
+      return res.status(403).json({ message: "Access denied: You don't have permission to access this store" });
+    }
+
+    next();
+  } catch (error) {
+    res.status(500).json({ message: "Store validation failed" });
+  }
 }
 
 function requireRole(roles: string[]) {
@@ -100,10 +143,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(userWithoutPassword);
   });
 
-  // Dashboard routes
-  app.get("/api/dashboard/stats", requireAuth, async (req, res) => {
+  // Store routes  
+  app.get("/api/stores", requireAuth, async (req, res) => {
     try {
-      const stats = await storage.getDashboardStats();
+      // Only administrators can see all stores, others see their assigned store
+      if (req.user!.role === 'administrator') {
+        const stores = await storage.getAllStores();
+        res.json(stores);
+      } else {
+        const user = await storage.getUser(req.user!.userId);
+        if (!user || !user.storeId) {
+          return res.status(403).json({ message: "No store access assigned" });
+        }
+        const store = await storage.getStore(user.storeId);
+        res.json(store ? [store] : []);
+      }
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch stores" });
+    }
+  });
+
+  app.post("/api/stores", requireAuth, requireRole(["administrator"]), async (req, res) => {
+    try {
+      const storeData = insertStoreSchema.parse(req.body);
+      const store = await storage.createStore(storeData);
+      res.status(201).json(store);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid store data" });
+    }
+  });
+
+  app.put("/api/stores/:id", requireAuth, requireRole(["administrator"]), async (req, res) => {
+    try {
+      const { id } = req.params;
+      const storeData = insertStoreSchema.partial().parse(req.body);
+      const store = await storage.updateStore(id, storeData);
+      
+      if (!store) {
+        return res.status(404).json({ message: "Store not found" });
+      }
+      
+      res.json(store);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid store data" });
+    }
+  });
+
+  app.delete("/api/stores/:id", requireAuth, requireRole(["administrator"]), async (req, res) => {
+    try {
+      const { id } = req.params;
+      const success = await storage.deleteStore(id);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Store not found" });
+      }
+      
+      res.json({ message: "Store deleted successfully" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete store" });
+    }
+  });
+
+  // Dashboard routes
+  app.get("/api/dashboard/stats", requireAuth, requireStore, validateStoreAccess, async (req, res) => {
+    try {
+      const stats = await storage.getDashboardStats(req.storeId!);
       res.json(stats);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch dashboard stats" });
@@ -165,18 +269,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Product routes
-  app.get("/api/products", requireAuth, async (req, res) => {
+  app.get("/api/products", requireAuth, requireStore, validateStoreAccess, async (req, res) => {
     try {
-      const products = await storage.getAllProducts();
+      const products = await storage.getAllProducts(req.storeId!);
       res.json(products);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch products" });
     }
   });
 
-  app.get("/api/products/low-stock", requireAuth, async (req, res) => {
+  app.get("/api/products/low-stock", requireAuth, requireStore, validateStoreAccess, async (req, res) => {
     try {
-      const products = await storage.getLowStockProducts();
+      const products = await storage.getLowStockProducts(req.storeId!);
       res.json(products);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch low stock products" });
@@ -240,9 +344,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Customer routes
-  app.get("/api/customers", requireAuth, async (req, res) => {
+  app.get("/api/customers", requireAuth, requireStore, validateStoreAccess, async (req, res) => {
     try {
-      const customers = await storage.getAllCustomers();
+      const customers = await storage.getAllCustomers(req.storeId!);
       res.json(customers);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch customers" });
@@ -291,9 +395,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Supplier routes
-  app.get("/api/suppliers", requireAuth, async (req, res) => {
+  app.get("/api/suppliers", requireAuth, requireStore, validateStoreAccess, async (req, res) => {
     try {
-      const suppliers = await storage.getAllSuppliers();
+      const suppliers = await storage.getAllSuppliers(req.storeId!);
       res.json(suppliers);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch suppliers" });
@@ -342,9 +446,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Category routes
-  app.get("/api/categories", requireAuth, async (req, res) => {
+  app.get("/api/categories", requireAuth, requireStore, validateStoreAccess, async (req, res) => {
     try {
-      const categories = await storage.getAllCategories();
+      const categories = await storage.getAllCategories(req.storeId!);
       res.json(categories);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch categories" });
@@ -362,9 +466,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Sales routes
-  app.get("/api/sales", requireAuth, async (req, res) => {
+  app.get("/api/sales", requireAuth, requireStore, validateStoreAccess, async (req, res) => {
     try {
-      const sales = await storage.getAllSales();
+      const sales = await storage.getAllSales(req.storeId!);
       res.json(sales);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch sales" });
@@ -479,22 +583,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Cash Flow routes
-  app.get("/api/cashflow/today", requireAuth, async (req, res) => {
+  app.get("/api/cashflow/today", requireAuth, requireStore, validateStoreAccess, async (req, res) => {
     try {
-      const stats = await storage.getTodayCashFlowStats();
+      const stats = await storage.getTodayCashFlowStats(req.storeId!);
       res.json(stats);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch today's cash flow stats" });
     }
   });
 
-  app.get("/api/cashflow/entries", requireAuth, async (req, res) => {
+  app.get("/api/cashflow/entries", requireAuth, requireStore, validateStoreAccess, async (req, res) => {
     try {
-      const user = await storage.getUser(req.user.userId);
-      if (!user) {
-        return res.status(401).json({ message: "User not found" });
-      }
-      const entries = await storage.getCashFlowEntries(user.storeId);
+      const entries = await storage.getCashFlowEntries(req.storeId!);
       res.json(entries);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch cash flow entries" });
@@ -580,19 +680,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/cashflow/entries/unpaid", requireAuth, async (req, res) => {
+  app.get("/api/cashflow/entries/unpaid", requireAuth, requireStore, validateStoreAccess, async (req, res) => {
     try {
-      const entries = await storage.getUnpaidCashFlowEntries();
+      const entries = await storage.getUnpaidCashFlowEntries(req.storeId!);
       res.json(entries);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch unpaid entries" });
     }
   });
 
-  app.get("/api/cashflow/entries/customer/:customerId", requireAuth, async (req, res) => {
+  app.get("/api/cashflow/entries/customer/:customerId", requireAuth, requireStore, validateStoreAccess, async (req, res) => {
     try {
       const { customerId } = req.params;
-      const entries = await storage.getCashFlowEntriesByCustomer(customerId);
+      const entries = await storage.getCashFlowEntriesByCustomer(customerId, req.storeId!);
       res.json(entries);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch customer entries" });
@@ -600,17 +700,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Cash Flow Categories routes
-  app.get("/api/cashflow/categories", requireAuth, async (req, res) => {
+  app.get("/api/cashflow/categories", requireAuth, requireStore, validateStoreAccess, async (req, res) => {
     try {
       const { type } = req.query;
-      const user = await storage.getUser(req.user.userId);
-      if (!user) {
-        return res.status(401).json({ message: "User not found" });
-      }
       
       const categories = type 
-        ? await storage.getCashFlowCategoriesByType(type as 'income' | 'expense', user.storeId)
-        : await storage.getAllCashFlowCategories(user.storeId);
+        ? await storage.getCashFlowCategoriesByType(type as 'income' | 'expense', req.storeId!)
+        : await storage.getAllCashFlowCategories(req.storeId!);
       res.json(categories);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch cash flow categories" });

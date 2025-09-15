@@ -1,14 +1,17 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { getAuthHeaders } from "@/lib/auth";
+import { useStore } from "@/contexts/StoreContext";
 import { 
   ArrowUp, DollarSign, ShoppingCart, AlertTriangle, 
   Package, UserPlus, Users, TrendingUp, Warehouse 
 } from "lucide-react";
 
 export default function Dashboard() {
+  const { currentStore } = useStore();
+
   const { data: stats, isLoading } = useQuery({
-    queryKey: ["/api/dashboard/stats"],
+    queryKey: ["/api/dashboard/stats", currentStore?.id],
     queryFn: async () => {
       const response = await fetch("/api/dashboard/stats", {
         headers: getAuthHeaders(),
@@ -16,6 +19,7 @@ export default function Dashboard() {
       if (!response.ok) throw new Error("Failed to fetch stats");
       return response.json();
     },
+    enabled: !!currentStore,
   });
 
   if (isLoading) {

@@ -4,6 +4,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "./lib/auth";
+import { StoreProvider } from "./contexts/StoreContext";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import PointOfSale from "./pages/PointOfSale";
@@ -15,6 +16,7 @@ import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
 import CashFlow from "./pages/CashFlow";
 import AccountsReceivable from "./pages/AccountsReceivable";
+import { StoreManagement } from "./pages/StoreManagement";
 import Sidebar from "./components/layout/Sidebar";
 import Header from "./components/layout/Header";
 import NotFound from "@/pages/not-found";
@@ -38,26 +40,29 @@ function AppContent() {
   }
 
   return (
-    <div className="flex h-screen bg-background">
-      <Sidebar />
-      <div className="flex-1 md:ml-0">
-        <Header />
-        <Switch>
-          <Route path="/" component={Dashboard} />
-          <Route path="/dashboard" component={Dashboard} />
-          <Route path="/pos" component={PointOfSale} />
-          <Route path="/products" component={Products} />
-          <Route path="/customers" component={Customers} />
-          <Route path="/suppliers" component={Suppliers} />
-          <Route path="/inventory" component={Inventory} />
-          <Route path="/reports" component={Reports} />
-          <Route path="/cashflow" component={CashFlow} />
-          <Route path="/accounts-receivable" component={AccountsReceivable} />
-          <Route path="/settings" component={Settings} />
-          <Route component={NotFound} />
-        </Switch>
+    <StoreProvider>
+      <div className="flex h-screen bg-background">
+        <Sidebar />
+        <div className="flex-1 md:ml-0">
+          <Header />
+          <Switch>
+            <Route path="/" component={Dashboard} />
+            <Route path="/dashboard" component={Dashboard} />
+            <Route path="/pos" component={PointOfSale} />
+            <Route path="/products" component={Products} />
+            <Route path="/customers" component={Customers} />
+            <Route path="/suppliers" component={Suppliers} />
+            <Route path="/inventory" component={Inventory} />
+            <Route path="/reports" component={Reports} />
+            <Route path="/cashflow" component={CashFlow} />
+            <Route path="/accounts-receivable" component={AccountsReceivable} />
+            <Route path="/stores" component={StoreManagement} />
+            <Route path="/settings" component={Settings} />
+            <Route component={NotFound} />
+          </Switch>
+        </div>
       </div>
-    </div>
+    </StoreProvider>
   );
 }
 

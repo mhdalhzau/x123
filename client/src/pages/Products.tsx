@@ -9,6 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { getAuthHeaders } from "@/lib/auth";
+import { useStore } from "@/contexts/StoreContext";
 import ProductModal from "@/components/products/ProductModal";
 import { type Product } from "@shared/schema";
 import { 
@@ -26,9 +27,10 @@ export default function Products() {
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { currentStore } = useStore();
 
   const { data: products = [], isLoading } = useQuery({
-    queryKey: ["/api/products"],
+    queryKey: ["/api/products", currentStore?.id],
     queryFn: async () => {
       const response = await fetch("/api/products", {
         headers: getAuthHeaders(),
@@ -36,10 +38,11 @@ export default function Products() {
       if (!response.ok) throw new Error("Failed to fetch products");
       return response.json();
     },
+    enabled: !!currentStore,
   });
 
   const { data: categories = [] } = useQuery({
-    queryKey: ["/api/categories"],
+    queryKey: ["/api/categories", currentStore?.id],
     queryFn: async () => {
       const response = await fetch("/api/categories", {
         headers: getAuthHeaders(),
@@ -47,6 +50,7 @@ export default function Products() {
       if (!response.ok) throw new Error("Failed to fetch categories");
       return response.json();
     },
+    enabled: !!currentStore,
   });
 
   const deleteProductMutation = useMutation({
@@ -62,7 +66,7 @@ export default function Products() {
         title: "Product deleted",
         description: "Product has been successfully deleted",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/products", currentStore?.id] });
     },
     onError: (error) => {
       toast({

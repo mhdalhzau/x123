@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { getAuthHeaders } from "@/lib/auth";
+import { useStore } from "@/contexts/StoreContext";
 import CustomerModal from "@/components/customers/CustomerModal";
 import { type Customer } from "@shared/schema";
 import { Plus, Search, Users, Mail, Star, Edit, Eye, Trash2 } from "lucide-react";
@@ -20,9 +21,10 @@ export default function Customers() {
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { currentStore } = useStore();
 
   const { data: customers = [], isLoading } = useQuery({
-    queryKey: ["/api/customers"],
+    queryKey: ["/api/customers", currentStore?.id],
     queryFn: async () => {
       const response = await fetch("/api/customers", {
         headers: getAuthHeaders(),
@@ -30,6 +32,7 @@ export default function Customers() {
       if (!response.ok) throw new Error("Failed to fetch customers");
       return response.json();
     },
+    enabled: !!currentStore,
   });
 
   const deleteCustomerMutation = useMutation({
@@ -45,7 +48,7 @@ export default function Customers() {
         title: "Customer deleted",
         description: "Customer has been successfully deleted",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/customers"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/customers", currentStore?.id] });
     },
     onError: (error) => {
       toast({

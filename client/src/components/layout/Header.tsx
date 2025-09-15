@@ -1,6 +1,7 @@
 import { useLocation } from "wouter";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
+import { StoreSelector } from "@/components/StoreSelector";
 import { Search, User, LogOut } from "lucide-react";
 
 const pageTitles: Record<string, string> = {
@@ -28,10 +29,18 @@ export default function Header() {
           <h1 className="text-2xl font-bold text-foreground" data-testid="page-title">
             {currentTitle}
           </h1>
+          <div className="hidden md:flex">
+            <StoreSelector />
+          </div>
         </div>
         
         <div className="flex items-center gap-4">
-          <div className="relative">
+          {/* Mobile store selector */}
+          <div className="flex md:hidden">
+            <StoreSelector />
+          </div>
+          
+          <div className="relative hidden sm:block">
             <input 
               type="text" 
               placeholder="Search..." 
