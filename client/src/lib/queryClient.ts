@@ -22,7 +22,7 @@ export function getCurrentStoreId(): string | null {
 function getStoreHeaders(): Record<string, string> {
   const headers: Record<string, string> = {};
   if (currentStoreId) {
-    headers['X-Store-Id'] = currentStoreId;
+    headers['x-store-id'] = currentStoreId;
   }
   return headers;
 }

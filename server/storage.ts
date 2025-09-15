@@ -288,6 +288,10 @@ export class MemStorage implements IStorage {
       createdAt: new Date(),
     };
     this.stores.set(id, store);
+    
+    // Create default cash flow categories for the new store
+    this.createDefaultCashFlowCategories(id);
+    
     return store;
   }
 
@@ -756,6 +760,56 @@ export class MemStorage implements IStorage {
       totalExpenses,
       netFlow
     };
+  }
+
+  // Helper method to create default cash flow categories for a store
+  private createDefaultCashFlowCategories(storeId: string): void {
+    const incomeCategories = [
+      { name: "Penjualan", description: "Pemasukan dari hasil penjualan usaha." },
+      { name: "Pendapatan Jasa/Komisi", description: "Pemasukan dari komisi usaha atau jasa" },
+      { name: "Penambahan Modal", description: "Pemasukan yang digunakan untuk modal tambahan usaha kamu." },
+      { name: "Penagihan Utang/Cicilan", description: "Pemasukan dari pengembalian utang atau pembayaran cicilan." },
+      { name: "Terima Pinjaman", description: "Pemasukan dari penerimaan uang pinjaman untuk usaha kamu." },
+      { name: "Transaksi Agen Pembayaran", description: "Pemasukan dari transaksi sebagai agen pembayaran, contoh: agen BriLink." },
+      { name: "Pendapatan Di Luar Usaha", description: "Pemasukan pribadi yang tidak berhubungan dengan kegiatan usaha. Contoh: hibah, hadiah, atau sedekah." },
+      { name: "Pendapatan Lain-lain", description: "Pendapatan lainnya yang tidak masuk dalam kategori di atas." }
+    ];
+
+    const expenseCategories = [
+      { name: "Pembelian stok", description: "Pengeluaran untuk pembelian barang yang akan dijual kembali." },
+      { name: "Pembelian bahan baku", description: "Pembelian bahan dasar yang akan diolah menjadi barang siap jual." },
+      { name: "Biaya operasional", description: "Biaya untuk menjalankan kegiatan usaha. Contoh: sewa tempat, listrik, dan internet." },
+      { name: "Gaji/Bonus Karyawan", description: "Pembayaran upah, gaji, atau bonus karyawan." },
+      { name: "Pemberian Utang", description: "Pengeluaran untuk memberikan pinjaman uang." },
+      { name: "Transaksi Agen Pembayaran", description: "Pengeluaran untuk transaksi sebagai agen pembayaran, contoh: agen BriLink." },
+      { name: "Pembayaran Utang/Cicilan", description: "Pengeluaran usaha untuk membayar utang/cicilan." },
+      { name: "Pengeluaran Di Luar Usaha", description: "Pengeluaran untuk kebutuhan pribadi yang tidak berhubungan dengan kegiatan usaha. Contoh: bayar berobat anak." },
+      { name: "Pengeluaran Lain-lain", description: "Pengeluaran lainnya yang tidak masuk dalam kategori di atas." }
+    ];
+
+    incomeCategories.forEach(cat => {
+      const id = randomUUID();
+      this.cashFlowCategories.set(id, {
+        id,
+        name: cat.name,
+        type: "income",
+        description: cat.description,
+        storeId,
+        isActive: true
+      });
+    });
+
+    expenseCategories.forEach(cat => {
+      const id = randomUUID();
+      this.cashFlowCategories.set(id, {
+        id,
+        name: cat.name,
+        type: "expense",
+        description: cat.description,
+        storeId,
+        isActive: true
+      });
+    });
   }
 
   // Cash Flow Categories methods
