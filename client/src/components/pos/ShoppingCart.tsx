@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { getAuthHeaders } from "@/lib/auth";
-import { ShoppingCart as CartIcon, CreditCard, Banknote, Smartphone, Pause, Trash2, Minus, Plus, Receipt } from "lucide-react";
+import { ShoppingCart as CartIcon, CreditCard, Banknote, Smartphone, Pause, Trash2, Minus, Plus, Receipt, Printer } from "lucide-react";
+import ThermalReceipt, { printThermalReceipt } from "./ThermalReceipt";
 
 interface CartItem {
   id: string;
@@ -35,6 +36,7 @@ export default function ShoppingCart({
   const [selectedCustomer, setSelectedCustomer] = useState<string>("walk-in");
   const [editingQuantity, setEditingQuantity] = useState<string | null>(null);
   const [tempQuantity, setTempQuantity] = useState<string>("");
+  const [lastSaleData, setLastSaleData] = useState<any>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -62,14 +64,32 @@ export default function ShoppingCart({
       if (!response.ok) throw new Error("Failed to process sale");
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      // Store sale data for receipt printing
+      setLastSaleData(data);
+      
+      // Print thermal receipt automatically
+      if (data.receiptData) {
+        printThermalReceipt({
+          ...data.receiptData,
+          subtotal: data.calculatedSubtotal || subtotal.toFixed(2),
+          tax: data.calculatedTax || tax.toFixed(2),
+          total: data.calculatedTotal || total.toFixed(2),
+          paymentMethod,
+          customerName: customers.find((c: any) => c.id === selectedCustomer)?.firstName + " " + customers.find((c: any) => c.id === selectedCustomer)?.lastName
+        });
+      }
+      
       toast({
         title: "Sale processed successfully",
-        description: "Receipt has been generated",
+        description: "Receipt has been printed",
       });
+      
       onClearCart();
       queryClient.invalidateQueries({ queryKey: ["/api/products"] });
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/cashflow/today"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/cashflow/entries"] });
     },
     onError: (error) => {
       toast({
@@ -331,7 +351,7 @@ export default function ShoppingCart({
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                 <AlertDialogAction onClick={handleProcessPayment}>
-                  <Receipt className="mr-2 w-4 h-4" />
+                  <Printer className="mr-2 w-4 h-4" />
                   Confirm & Print Receipt
                 </AlertDialogAction>
               </AlertDialogFooter>
@@ -354,6 +374,34 @@ export default function ShoppingCart({
                 Clear
               </Button>
             </div>
+          )}
+          
+          {/* Manual Print Receipt Button */}
+          {lastSaleData && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => {
+                if (lastSaleData.receiptData) {
+                  printThermalReceipt({
+                    ...lastSaleData.receiptData,
+                    subtotal: lastSaleData.calculatedSubtotal,
+                    tax: lastSaleData.calculatedTax,
+                    total: lastSaleData.calculatedTotal,
+                    paymentMethod,
+                    customerName: customers.find((c: any) => c.id === selectedCustomer)?.firstName + " " + customers.find((c: any) => c.id === selectedCustomer)?.lastName
+                  });
+                  toast({
+                    title: "Receipt reprinted",
+                    description: "Thermal receipt has been sent to printer"
+                  });
+                }
+              }}
+              data-testid="button-reprint"
+            >
+              <Printer className="mr-1 w-4 h-4" />
+              Reprint Last Receipt
+            </Button>
           )}
         </div>
       </CardContent>

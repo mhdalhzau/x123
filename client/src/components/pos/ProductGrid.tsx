@@ -190,7 +190,7 @@ export default function ProductGrid({
       {filteredProducts.length === 0 && (
         <Card>
           <CardContent className="p-12 text-center">
-            <i className="fas fa-search text-4xl text-muted-foreground mb-4"></i>
+            <Search className="w-16 h-16 text-muted-foreground mb-4 mx-auto" />
             <h3 className="text-lg font-medium text-foreground mb-2">No products found</h3>
             <p className="text-muted-foreground">
               Try adjusting your search terms or browse all products
