@@ -287,13 +287,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/products/:id", requireAuth, async (req, res) => {
+  app.get("/api/products/:id", requireAuth, requireStore, validateStoreAccess, async (req, res) => {
     try {
       const { id } = req.params;
       const product = await storage.getProduct(id);
       
       if (!product) {
         return res.status(404).json({ message: "Product not found" });
+      }
+      
+      // Verify product belongs to the current store
+      if (product.storeId !== req.storeId) {
+        return res.status(403).json({ message: "Access denied: Product does not belong to this store" });
       }
       
       res.json(product);
@@ -353,9 +358,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/customers", requireAuth, async (req, res) => {
+  app.post("/api/customers", requireAuth, requireStore, validateStoreAccess, async (req, res) => {
     try {
-      const customerData = insertCustomerSchema.parse(req.body);
+      const customerData = insertCustomerSchema.parse({
+        ...req.body,
+        storeId: req.storeId!
+      });
       const customer = await storage.createCustomer(customerData);
       res.status(201).json(customer);
     } catch (error) {
@@ -363,9 +371,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/customers/:id", requireAuth, async (req, res) => {
+  app.put("/api/customers/:id", requireAuth, requireStore, validateStoreAccess, async (req, res) => {
     try {
       const { id } = req.params;
+      
+      // First verify the customer belongs to the current store
+      const existingCustomer = await storage.getCustomer(id);
+      if (!existingCustomer) {
+        return res.status(404).json({ message: "Customer not found" });
+      }
+      
+      if (existingCustomer.storeId !== req.storeId) {
+        return res.status(403).json({ message: "Access denied: Customer does not belong to this store" });
+      }
+      
       const customerData = insertCustomerSchema.partial().parse(req.body);
       const customer = await storage.updateCustomer(id, customerData);
       
@@ -404,9 +423,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/suppliers", requireAuth, requireRole(["administrator", "owner", "administrasi"]), async (req, res) => {
+  app.post("/api/suppliers", requireAuth, requireStore, validateStoreAccess, requireRole(["administrator", "owner", "administrasi"]), async (req, res) => {
     try {
-      const supplierData = insertSupplierSchema.parse(req.body);
+      const supplierData = insertSupplierSchema.parse({
+        ...req.body,
+        storeId: req.storeId!
+      });
       const supplier = await storage.createSupplier(supplierData);
       res.status(201).json(supplier);
     } catch (error) {
@@ -414,9 +436,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/suppliers/:id", requireAuth, requireRole(["administrator", "owner", "administrasi"]), async (req, res) => {
+  app.put("/api/suppliers/:id", requireAuth, requireStore, validateStoreAccess, requireRole(["administrator", "owner", "administrasi"]), async (req, res) => {
     try {
       const { id } = req.params;
+      
+      // First verify the supplier belongs to the current store
+      const existingSupplier = await storage.getSupplier(id);
+      if (!existingSupplier) {
+        return res.status(404).json({ message: "Supplier not found" });
+      }
+      
+      if (existingSupplier.storeId !== req.storeId) {
+        return res.status(403).json({ message: "Access denied: Supplier does not belong to this store" });
+      }
+      
       const supplierData = insertSupplierSchema.partial().parse(req.body);
       const supplier = await storage.updateSupplier(id, supplierData);
       
@@ -455,9 +488,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/categories", requireAuth, requireRole(["administrator", "owner", "administrasi"]), async (req, res) => {
+  app.post("/api/categories", requireAuth, requireStore, validateStoreAccess, requireRole(["administrator", "owner", "administrasi"]), async (req, res) => {
     try {
-      const categoryData = insertCategorySchema.parse(req.body);
+      const categoryData = insertCategorySchema.parse({
+        ...req.body,
+        storeId: req.storeId!
+      });
       const category = await storage.createCategory(categoryData);
       res.status(201).json(category);
     } catch (error) {
@@ -475,7 +511,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/sales", requireAuth, async (req, res) => {
+  app.post("/api/sales", requireAuth, requireStore, validateStoreAccess, async (req, res) => {
     try {
       const { items, paymentMethod, customerId } = req.body;
       
@@ -501,6 +537,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const product = await storage.getProduct(item.productId);
         if (!product) {
           return res.status(400).json({ message: `Product ${item.productId} not found` });
+        }
+        
+        // Verify product belongs to the current store
+        if (product.storeId !== req.storeId) {
+          return res.status(403).json({ message: `Product ${product.name} does not belong to this store` });
         }
         
         if (!product.isActive) {
@@ -535,6 +576,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const saleData = {
         customerId: customerId === "walk-in" || !customerId ? null : customerId,
         userId: req.user!.userId,
+        storeId: req.storeId!,
         total: total.toFixed(2),
         tax: tax.toFixed(2),
         discount: "0.00",
@@ -601,11 +643,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/cashflow/entries", requireAuth, async (req, res) => {
+  app.post("/api/cashflow/entries", requireAuth, requireStore, validateStoreAccess, async (req, res) => {
     try {
       const entryData = insertCashFlowEntrySchema.parse({
         ...req.body,
-        userId: req.user!.userId
+        userId: req.user!.userId,
+        storeId: req.storeId!
       });
       const entry = await storage.createCashFlowEntry(entryData);
       res.status(201).json(entry);
@@ -614,17 +657,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/cashflow/entries/:id", requireAuth, async (req, res) => {
+  app.put("/api/cashflow/entries/:id", requireAuth, requireStore, validateStoreAccess, async (req, res) => {
     try {
       const { id } = req.params;
       const entryData = insertCashFlowEntrySchema.partial().parse(req.body);
       
-      const user = await storage.getUser(req.user!.userId);
-      if (!user) {
-        return res.status(401).json({ message: "User not found" });
-      }
-      
-      const entry = await storage.updateCashFlowEntry(id, entryData, user.storeId);
+      const entry = await storage.updateCashFlowEntry(id, entryData, req.storeId!);
       
       if (!entry) {
         return res.status(404).json({ message: "Cash flow entry not found or access denied" });
@@ -657,22 +695,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/cashflow/entries/date-range", requireAuth, async (req, res) => {
+  app.get("/api/cashflow/entries/date-range", requireAuth, requireStore, validateStoreAccess, async (req, res) => {
     try {
       const { startDate, endDate } = req.query;
       if (!startDate || !endDate) {
         return res.status(400).json({ message: "Start date and end date are required" });
       }
       
-      const user = await storage.getUser(req.user!.userId);
-      if (!user) {
-        return res.status(401).json({ message: "User not found" });
-      }
-      
       const entries = await storage.getCashFlowEntriesByDateRange(
         new Date(startDate as string), 
         new Date(endDate as string),
-        user.storeId
+        req.storeId!
       );
       res.json(entries);
     } catch (error) {

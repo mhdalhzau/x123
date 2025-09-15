@@ -26,9 +26,11 @@ export function getCurrentStoreId(): string | null {
 
 function getStoreHeaders(): Record<string, string> {
   const headers: Record<string, string> = {};
-  // Always include a store ID - use saved one or fallback to default
-  const storeId = currentStoreId || localStorage.getItem('currentStoreId') || '418df8dc-36da-4ee7-8ee0-f1225222503d';
-  headers['x-store-id'] = storeId;
+  // Only include store ID if we have a valid one
+  const storeId = currentStoreId || localStorage.getItem('currentStoreId');
+  if (storeId) {
+    headers['x-store-id'] = storeId;
+  }
   return headers;
 }
 
