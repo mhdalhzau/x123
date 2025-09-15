@@ -45,3 +45,12 @@ author = "agent"
 task = "shell.exec"
 args = "npm run dev"
 waitForPort = 5000
+
+[[workflows.workflow]]
+name = "ss"
+mode = "sequential"
+author = 47344677
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "# 🛠 Replit Git Recovery Script  echo \"🔎 Checking Git status...\" git status || echo \"⚠️ Git status failed\"  echo \"🧹 Checking repository health...\" git fsck --full || echo \"⚠️ Git fsck reported issues\"  echo \"🧹 Running garbage collection...\" git gc --prune=now || echo \"⚠️ Git gc failed\"  echo \"🔄 Verifying HEAD pointer...\" if [ ! -s .git/HEAD ]; then   echo \"⚠️ HEAD is broken, resetting to main branch...\"   echo \"ref: refs/heads/main\" > .git/HEAD fi  echo \"📥 Fetching from remote (if exists)...\" git fetch origin || echo \"⚠️ No remote or fetch failed\"  echo \"📥 Pulling latest changes...\" git pull origin main || echo \"⚠️ Could not pull (maybe wrong branch?)\"  echo \"📝 Making a test commit...\" git add . git commit -m \"chore: recover repo state\" || echo \"⚠️ Nothing to commit\"  echo \"🚀 Pushing to remote...\" git push origin main || echo \"⚠️ Push failed (check branch or auth)\"  echo \"✅ Git recovery script finished!\""
