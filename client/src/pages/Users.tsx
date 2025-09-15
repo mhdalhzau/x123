@@ -99,7 +99,7 @@ export default function Users() {
 
   const toggleSelectAll = () => {
     setSelectedUsers(prev =>
-      prev.length === filteredUsers.length ? [] : filteredUsers.map(u => u.id)
+      prev.length === filteredUsers.length ? [] : filteredUsers.map((u: User) => u.id)
     );
   };
 

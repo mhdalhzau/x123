@@ -15,8 +15,8 @@ import {
   Search, 
   Users, 
   Crown, 
-  UserTie, 
-  CashRegister, 
+  User as UserIcon, 
+  Calculator, 
   Edit, 
   Eye, 
   Trash2 
@@ -110,7 +110,7 @@ export default function UsersTab() {
 
   const toggleSelectAll = () => {
     setSelectedUsers(prev =>
-      prev.length === filteredUsers.length ? [] : filteredUsers.map(u => u.id)
+      prev.length === filteredUsers.length ? [] : filteredUsers.map((u: User) => u.id)
     );
   };
 
@@ -132,9 +132,9 @@ export default function UsersTab() {
       case "admin":
         return Crown;
       case "manager":
-        return UserTie;
+        return UserIcon;
       case "cashier":
-        return CashRegister;
+        return Calculator;
       default:
         return Users;
     }
@@ -243,7 +243,7 @@ export default function UsersTab() {
                 </p>
               </div>
               <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900 rounded-lg flex items-center justify-center">
-                <UserTie className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                <UserIcon className="w-6 h-6 text-purple-600 dark:text-purple-400" />
               </div>
             </div>
           </CardContent>
@@ -259,7 +259,7 @@ export default function UsersTab() {
                 </p>
               </div>
               <div className="w-12 h-12 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center">
-                <CashRegister className="w-6 h-6 text-green-600 dark:text-green-400" />
+                <Calculator className="w-6 h-6 text-green-600 dark:text-green-400" />
               </div>
             </div>
           </CardContent>
