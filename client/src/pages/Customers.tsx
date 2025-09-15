@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { getAuthHeaders } from "@/lib/auth";
 import CustomerModal from "@/components/customers/CustomerModal";
 import { type Customer } from "@shared/schema";
+import { Plus, Search, Users, Mail, Star, Edit, Eye, Trash2 } from "lucide-react";
 
 export default function Customers() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -89,7 +90,7 @@ export default function Customers() {
 
   const toggleSelectAll = () => {
     setSelectedCustomers(prev =>
-      prev.length === filteredCustomers.length ? [] : filteredCustomers.map(c => c.id)
+      prev.length === filteredCustomers.length ? [] : filteredCustomers.map((c: Customer) => c.id)
     );
   };
 
@@ -130,7 +131,7 @@ export default function Customers() {
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-foreground">Customer Management</h1>
         <Button onClick={handleAddCustomer} data-testid="button-add-customer">
-          <i className="fas fa-plus mr-2"></i>
+          <Plus className="w-4 h-4 mr-2" />
           Add Customer
         </Button>
       </div>
@@ -147,7 +148,7 @@ export default function Customers() {
               className="pl-10"
               data-testid="search-customers"
             />
-            <i className="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground"></i>
+            <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
           </div>
         </CardContent>
       </Card>
@@ -164,7 +165,7 @@ export default function Customers() {
                 </p>
               </div>
               <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                <i className="fas fa-users text-blue-600 text-xl"></i>
+                <Users className="w-6 h-6 text-blue-600" />
               </div>
             </div>
           </CardContent>
@@ -180,7 +181,7 @@ export default function Customers() {
                 </p>
               </div>
               <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                <i className="fas fa-envelope text-green-600 text-xl"></i>
+                <Mail className="w-6 h-6 text-green-600" />
               </div>
             </div>
           </CardContent>
@@ -196,7 +197,7 @@ export default function Customers() {
                 </p>
               </div>
               <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                <i className="fas fa-star text-purple-600 text-xl"></i>
+                <Star className="w-6 h-6 text-purple-600" />
               </div>
             </div>
           </CardContent>
@@ -270,14 +271,14 @@ export default function Customers() {
                           onClick={() => handleEdit(customer)}
                           data-testid={`edit-customer-${customer.id}`}
                         >
-                          <i className="fas fa-edit text-blue-600"></i>
+                          <Edit className="w-4 h-4 text-blue-600" />
                         </Button>
                         <Button
                           variant="ghost"
                           size="sm"
                           data-testid={`view-customer-${customer.id}`}
                         >
-                          <i className="fas fa-eye text-green-600"></i>
+                          <Eye className="w-4 h-4 text-green-600" />
                         </Button>
                         <Button
                           variant="ghost"
@@ -285,7 +286,7 @@ export default function Customers() {
                           onClick={() => handleDelete(customer.id)}
                           data-testid={`delete-customer-${customer.id}`}
                         >
-                          <i className="fas fa-trash text-red-600"></i>
+                          <Trash2 className="w-4 h-4 text-red-600" />
                         </Button>
                       </div>
                     </TableCell>
@@ -297,7 +298,7 @@ export default function Customers() {
           
           {filteredCustomers.length === 0 && (
             <div className="text-center py-12">
-              <i className="fas fa-users text-4xl text-muted-foreground mb-4"></i>
+              <Users className="w-16 h-16 text-muted-foreground mb-4" />
               <h3 className="text-lg font-medium text-foreground mb-2">No customers found</h3>
               <p className="text-muted-foreground mb-4">
                 {searchTerm
@@ -305,7 +306,7 @@ export default function Customers() {
                   : "Get started by adding your first customer"}
               </p>
               <Button onClick={handleAddCustomer}>
-                <i className="fas fa-plus mr-2"></i>
+                <Plus className="w-4 h-4 mr-2" />
                 Add Customer
               </Button>
             </div>

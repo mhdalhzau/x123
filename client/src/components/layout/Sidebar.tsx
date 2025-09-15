@@ -12,7 +12,8 @@ import {
   Settings, 
   Star, 
   Menu,
-  DollarSign
+  DollarSign,
+  CreditCard
 } from "lucide-react";
 
 const navigation = [
@@ -23,6 +24,7 @@ const navigation = [
   { name: "Customers", href: "/customers", icon: Users },
   { name: "Suppliers", href: "/suppliers", icon: Truck },
   { name: "Cash Flow", href: "/cashflow", icon: DollarSign },
+  { name: "Accounts Receivable", href: "/accounts-receivable", icon: CreditCard },
   { name: "Reports", href: "/reports", icon: BarChart3 },
   { name: "Settings", href: "/settings", icon: Settings },
 ];

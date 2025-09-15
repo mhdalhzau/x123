@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getAuthHeaders } from "@/lib/auth";
+import { FileText, FileSpreadsheet, BarChart3, DollarSign, ShoppingCart, TrendingUp, Package } from "lucide-react";
 
 export default function Reports() {
   const [dateRange, setDateRange] = useState("7");
@@ -123,11 +124,11 @@ export default function Reports() {
         <h1 className="text-2xl font-bold text-foreground">Reports & Analytics</h1>
         <div className="flex gap-2">
           <Button variant="outline" data-testid="button-export-pdf">
-            <i className="fas fa-file-pdf mr-2"></i>
+            <FileText className="w-4 h-4 mr-2" />
             Export PDF
           </Button>
           <Button variant="outline" data-testid="button-export-excel">
-            <i className="fas fa-file-excel mr-2"></i>
+            <FileSpreadsheet className="w-4 h-4 mr-2" />
             Export Excel
           </Button>
         </div>
@@ -195,7 +196,7 @@ export default function Reports() {
 
             <div className="flex items-end">
               <Button className="w-full" data-testid="button-generate-report">
-                <i className="fas fa-chart-bar mr-2"></i>
+                <BarChart3 className="w-4 h-4 mr-2" />
                 Generate Report
               </Button>
             </div>
@@ -215,7 +216,7 @@ export default function Reports() {
                 </p>
               </div>
               <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                <i className="fas fa-dollar-sign text-green-600 text-xl"></i>
+                <DollarSign className="w-6 h-6 text-green-600" />
               </div>
             </div>
           </CardContent>
@@ -231,7 +232,7 @@ export default function Reports() {
                 </p>
               </div>
               <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                <i className="fas fa-shopping-cart text-blue-600 text-xl"></i>
+                <ShoppingCart className="w-6 h-6 text-blue-600" />
               </div>
             </div>
           </CardContent>
@@ -247,7 +248,7 @@ export default function Reports() {
                 </p>
               </div>
               <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                <i className="fas fa-chart-line text-purple-600 text-xl"></i>
+                <TrendingUp className="w-6 h-6 text-purple-600" />
               </div>
             </div>
           </CardContent>
@@ -263,7 +264,7 @@ export default function Reports() {
                 </p>
               </div>
               <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
-                <i className="fas fa-box text-orange-600 text-xl"></i>
+                <Package className="w-6 h-6 text-orange-600" />
               </div>
             </div>
           </CardContent>
@@ -280,7 +281,7 @@ export default function Reports() {
           <CardContent>
             <div className="h-64 flex items-center justify-center bg-muted rounded-lg">
               <div className="text-center">
-                <i className="fas fa-chart-line text-4xl text-muted-foreground mb-4"></i>
+                <TrendingUp className="w-16 h-16 text-muted-foreground mb-4" />
                 <p className="text-muted-foreground">Chart visualization would be here</p>
                 <p className="text-sm text-muted-foreground">Integrate Chart.js for data visualization</p>
               </div>
@@ -356,7 +357,7 @@ export default function Reports() {
           
           {filteredSales.length === 0 && (
             <div className="text-center py-12">
-              <i className="fas fa-chart-bar text-4xl text-muted-foreground mb-4"></i>
+              <BarChart3 className="w-16 h-16 text-muted-foreground mb-4" />
               <h3 className="text-lg font-medium text-foreground mb-2">No sales data</h3>
               <p className="text-muted-foreground">
                 No sales found for the selected period

@@ -11,6 +11,7 @@ import {
   insertSaleSchema,
   insertSaleItemSchema,
   insertInventoryMovementSchema,
+  insertCashFlowCategorySchema,
   insertCashFlowEntrySchema
 } from "@shared/schema";
 
@@ -506,6 +507,137 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(entry);
     } catch (error) {
       res.status(400).json({ message: "Invalid cash flow entry data" });
+    }
+  });
+
+  app.put("/api/cashflow/entries/:id", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const entryData = insertCashFlowEntrySchema.partial().parse(req.body);
+      const entry = await storage.updateCashFlowEntry(id, entryData);
+      
+      if (!entry) {
+        return res.status(404).json({ message: "Cash flow entry not found" });
+      }
+      
+      res.json(entry);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid cash flow entry data" });
+    }
+  });
+
+  app.delete("/api/cashflow/entries/:id", requireAuth, requireRole(["admin", "manager"]), async (req, res) => {
+    try {
+      const { id } = req.params;
+      const success = await storage.deleteCashFlowEntry(id);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Cash flow entry not found" });
+      }
+      
+      res.json({ message: "Cash flow entry deleted successfully" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete cash flow entry" });
+    }
+  });
+
+  app.get("/api/cashflow/entries/date-range", requireAuth, async (req, res) => {
+    try {
+      const { startDate, endDate } = req.query;
+      if (!startDate || !endDate) {
+        return res.status(400).json({ message: "Start date and end date are required" });
+      }
+      
+      const entries = await storage.getCashFlowEntriesByDateRange(
+        new Date(startDate as string), 
+        new Date(endDate as string)
+      );
+      res.json(entries);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch cash flow entries" });
+    }
+  });
+
+  app.get("/api/cashflow/entries/unpaid", requireAuth, async (req, res) => {
+    try {
+      const entries = await storage.getUnpaidCashFlowEntries();
+      res.json(entries);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch unpaid entries" });
+    }
+  });
+
+  app.get("/api/cashflow/entries/customer/:customerId", requireAuth, async (req, res) => {
+    try {
+      const { customerId } = req.params;
+      const entries = await storage.getCashFlowEntriesByCustomer(customerId);
+      res.json(entries);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch customer entries" });
+    }
+  });
+
+  // Cash Flow Categories routes
+  app.get("/api/cashflow/categories", requireAuth, async (req, res) => {
+    try {
+      const { type } = req.query;
+      const categories = type 
+        ? await storage.getCashFlowCategoriesByType(type as 'income' | 'expense')
+        : await storage.getAllCashFlowCategories();
+      res.json(categories);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch cash flow categories" });
+    }
+  });
+
+  app.post("/api/cashflow/categories", requireAuth, requireRole(["admin", "manager"]), async (req, res) => {
+    try {
+      const categoryData = insertCashFlowCategorySchema.parse(req.body);
+      const category = await storage.createCashFlowCategory(categoryData);
+      res.status(201).json(category);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid category data" });
+    }
+  });
+
+  app.put("/api/cashflow/categories/:id", requireAuth, requireRole(["admin", "manager"]), async (req, res) => {
+    try {
+      const { id } = req.params;
+      const categoryData = insertCashFlowCategorySchema.partial().parse(req.body);
+      const category = await storage.updateCashFlowCategory(id, categoryData);
+      
+      if (!category) {
+        return res.status(404).json({ message: "Category not found" });
+      }
+      
+      res.json(category);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid category data" });
+    }
+  });
+
+  app.delete("/api/cashflow/categories/:id", requireAuth, requireRole(["admin"]), async (req, res) => {
+    try {
+      const { id } = req.params;
+      const success = await storage.deleteCashFlowCategory(id);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Category not found" });
+      }
+      
+      res.json({ message: "Category deleted successfully" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete category" });
+    }
+  });
+
+  // Accounts Receivable routes
+  app.get("/api/accounts-receivable", requireAuth, async (req, res) => {
+    try {
+      const receivables = await storage.getAccountsReceivable();
+      res.json(receivables);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch accounts receivable" });
     }
   });
 

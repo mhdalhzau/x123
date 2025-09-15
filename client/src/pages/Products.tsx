@@ -11,6 +11,10 @@ import { useToast } from "@/hooks/use-toast";
 import { getAuthHeaders } from "@/lib/auth";
 import ProductModal from "@/components/products/ProductModal";
 import { type Product } from "@shared/schema";
+import { 
+  Plus, Search, Filter, Edit, Eye, Trash2, Package,
+  Headphones, Smartphone, Laptop, Mouse, Box
+} from "lucide-react";
 
 export default function Products() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -83,11 +87,11 @@ export default function Products() {
 
   const getProductIcon = (name: string) => {
     const nameLower = name.toLowerCase();
-    if (nameLower.includes("headphone")) return "fas fa-headphones";
-    if (nameLower.includes("phone") || nameLower.includes("case")) return "fas fa-mobile-alt";
-    if (nameLower.includes("laptop") || nameLower.includes("stand")) return "fas fa-laptop";
-    if (nameLower.includes("mouse")) return "fas fa-mouse";
-    return "fas fa-cube";
+    if (nameLower.includes("headphone")) return Headphones;
+    if (nameLower.includes("phone") || nameLower.includes("case")) return Smartphone;
+    if (nameLower.includes("laptop") || nameLower.includes("stand")) return Laptop;
+    if (nameLower.includes("mouse")) return Mouse;
+    return Box;
   };
 
   const getProductGradient = (index: number) => {
@@ -126,7 +130,7 @@ export default function Products() {
 
   const toggleSelectAll = () => {
     setSelectedProducts(prev =>
-      prev.length === filteredProducts.length ? [] : filteredProducts.map(p => p.id)
+      prev.length === filteredProducts.length ? [] : filteredProducts.map((p: Product) => p.id)
     );
   };
 
@@ -169,7 +173,7 @@ export default function Products() {
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-foreground">Product Management</h1>
         <Button onClick={handleAddProduct} data-testid="button-add-product">
-          <i className="fas fa-plus mr-2"></i>
+          <Plus className="w-4 h-4 mr-2" />
           Add Product
         </Button>
       </div>
@@ -187,7 +191,7 @@ export default function Products() {
                 className="pl-10"
                 data-testid="search-products"
               />
-              <i className="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground"></i>
+              <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
             </div>
             
             <Select value={selectedCategory} onValueChange={setSelectedCategory}>
@@ -217,7 +221,7 @@ export default function Products() {
             </Select>
             
             <Button variant="secondary" data-testid="button-filter">
-              <i className="fas fa-filter mr-2"></i>
+              <Filter className="w-4 h-4 mr-2" />
               Filter
             </Button>
           </div>
@@ -306,14 +310,14 @@ export default function Products() {
                             onClick={() => handleEdit(product)}
                             data-testid={`edit-product-${product.id}`}
                           >
-                            <i className="fas fa-edit text-blue-600"></i>
+                            <Edit className="w-4 h-4 text-blue-600" />
                           </Button>
                           <Button
                             variant="ghost"
                             size="sm"
                             data-testid={`view-product-${product.id}`}
                           >
-                            <i className="fas fa-eye text-green-600"></i>
+                            <Eye className="w-4 h-4 text-green-600" />
                           </Button>
                           <Button
                             variant="ghost"
@@ -321,7 +325,7 @@ export default function Products() {
                             onClick={() => handleDelete(product.id)}
                             data-testid={`delete-product-${product.id}`}
                           >
-                            <i className="fas fa-trash text-red-600"></i>
+                            <Trash2 className="w-4 h-4 text-red-600" />
                           </Button>
                         </div>
                       </TableCell>
@@ -334,7 +338,7 @@ export default function Products() {
           
           {filteredProducts.length === 0 && (
             <div className="text-center py-12">
-              <i className="fas fa-box text-4xl text-muted-foreground mb-4"></i>
+              <Package className="w-16 h-16 text-muted-foreground mb-4" />
               <h3 className="text-lg font-medium text-foreground mb-2">No products found</h3>
               <p className="text-muted-foreground mb-4">
                 {searchTerm || selectedCategory !== "all" || selectedStatus !== "all"
@@ -342,7 +346,7 @@ export default function Products() {
                   : "Get started by adding your first product"}
               </p>
               <Button onClick={handleAddProduct}>
-                <i className="fas fa-plus mr-2"></i>
+                <Plus className="w-4 h-4 mr-2" />
                 Add Product
               </Button>
             </div>

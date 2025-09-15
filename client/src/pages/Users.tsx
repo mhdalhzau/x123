@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { getAuthHeaders, useAuth } from "@/lib/auth";
 import UserModal from "@/components/users/UserModal";
 import { type User } from "@shared/schema";
+import { Crown, UserCheck, Calculator, User as UserIcon, Plus, Search, Users as UsersIcon, Edit, Eye, Trash2 } from "lucide-react";
 
 export default function Users() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -119,13 +120,13 @@ export default function Users() {
   const getRoleIcon = (role: string) => {
     switch (role) {
       case "admin":
-        return "fas fa-crown";
+        return <Crown className="w-4 h-4" />;
       case "manager":
-        return "fas fa-user-tie";
+        return <UserCheck className="w-4 h-4" />;
       case "cashier":
-        return "fas fa-cash-register";
+        return <Calculator className="w-4 h-4" />;
       default:
-        return "fas fa-user";
+        return <UserIcon className="w-4 h-4" />;
     }
   };
 
@@ -166,7 +167,7 @@ export default function Users() {
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-foreground">User Management</h1>
         <Button onClick={handleAddUser} data-testid="button-add-user">
-          <i className="fas fa-plus mr-2"></i>
+          <Plus className="w-4 h-4 mr-2" />
           Add User
         </Button>
       </div>
@@ -183,7 +184,7 @@ export default function Users() {
               className="pl-10"
               data-testid="search-users"
             />
-            <i className="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground"></i>
+            <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
           </div>
         </CardContent>
       </Card>
@@ -200,7 +201,7 @@ export default function Users() {
                 </p>
               </div>
               <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                <i className="fas fa-users text-blue-600 text-xl"></i>
+                <UsersIcon className="w-6 h-6 text-blue-600" />
               </div>
             </div>
           </CardContent>
@@ -216,7 +217,7 @@ export default function Users() {
                 </p>
               </div>
               <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
-                <i className="fas fa-crown text-red-600 text-xl"></i>
+                <Crown className="w-6 h-6 text-red-600" />
               </div>
             </div>
           </CardContent>
@@ -232,7 +233,7 @@ export default function Users() {
                 </p>
               </div>
               <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                <i className="fas fa-user-tie text-purple-600 text-xl"></i>
+                <UserCheck className="w-6 h-6 text-purple-600" />
               </div>
             </div>
           </CardContent>
@@ -248,7 +249,7 @@ export default function Users() {
                 </p>
               </div>
               <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                <i className="fas fa-cash-register text-green-600 text-xl"></i>
+                <Calculator className="w-6 h-6 text-green-600" />
               </div>
             </div>
           </CardContent>
@@ -313,7 +314,7 @@ export default function Users() {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <i className={`${getRoleIcon(user.role)} text-sm`}></i>
+                        {getRoleIcon(user.role)}
                         <Badge className={getRoleBadgeColor(user.role)}>
                           {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
                         </Badge>
@@ -332,14 +333,14 @@ export default function Users() {
                           onClick={() => handleEdit(user)}
                           data-testid={`edit-user-${user.id}`}
                         >
-                          <i className="fas fa-edit text-blue-600"></i>
+                          <Edit className="w-4 h-4 text-blue-600" />
                         </Button>
                         <Button
                           variant="ghost"
                           size="sm"
                           data-testid={`view-user-${user.id}`}
                         >
-                          <i className="fas fa-eye text-green-600"></i>
+                          <Eye className="w-4 h-4 text-green-600" />
                         </Button>
                         <Button
                           variant="ghost"
@@ -348,7 +349,7 @@ export default function Users() {
                           disabled={user.id === currentUser?.id}
                           data-testid={`delete-user-${user.id}`}
                         >
-                          <i className="fas fa-trash text-red-600"></i>
+                          <Trash2 className="w-4 h-4 text-red-600" />
                         </Button>
                       </div>
                     </TableCell>
@@ -360,7 +361,7 @@ export default function Users() {
           
           {filteredUsers.length === 0 && (
             <div className="text-center py-12">
-              <i className="fas fa-users text-4xl text-muted-foreground mb-4"></i>
+              <UsersIcon className="w-16 h-16 text-muted-foreground mb-4" />
               <h3 className="text-lg font-medium text-foreground mb-2">No users found</h3>
               <p className="text-muted-foreground mb-4">
                 {searchTerm
@@ -368,7 +369,7 @@ export default function Users() {
                   : "Get started by adding your first user"}
               </p>
               <Button onClick={handleAddUser}>
-                <i className="fas fa-plus mr-2"></i>
+                <Plus className="w-4 h-4 mr-2" />
                 Add User
               </Button>
             </div>

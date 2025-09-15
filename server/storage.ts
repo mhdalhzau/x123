@@ -7,6 +7,7 @@ import {
   type Sale, type InsertSale,
   type SaleItem, type InsertSaleItem,
   type InventoryMovement, type InsertInventoryMovement,
+  type CashFlowCategory, type InsertCashFlowCategory,
   type CashFlowEntry, type InsertCashFlowEntry
 } from "@shared/schema";
 import { randomUUID } from "crypto";
@@ -70,10 +71,23 @@ export interface IStorage {
   getInventoryMovements(productId: string): Promise<InventoryMovement[]>;
   updateProductStock(productId: string, quantity: number): Promise<boolean>;
 
-  // Cash Flow
+  // Cash Flow Categories
+  getCashFlowCategory(id: string): Promise<CashFlowCategory | undefined>;
+  createCashFlowCategory(category: InsertCashFlowCategory): Promise<CashFlowCategory>;
+  updateCashFlowCategory(id: string, category: Partial<InsertCashFlowCategory>): Promise<CashFlowCategory | undefined>;
+  deleteCashFlowCategory(id: string): Promise<boolean>;
+  getAllCashFlowCategories(): Promise<CashFlowCategory[]>;
+  getCashFlowCategoriesByType(type: 'income' | 'expense'): Promise<CashFlowCategory[]>;
+
+  // Enhanced Cash Flow
   createCashFlowEntry(entry: InsertCashFlowEntry): Promise<CashFlowEntry>;
+  updateCashFlowEntry(id: string, entry: Partial<InsertCashFlowEntry>): Promise<CashFlowEntry | undefined>;
+  deleteCashFlowEntry(id: string): Promise<boolean>;
   getCashFlowEntries(): Promise<CashFlowEntry[]>;
   getCashFlowEntriesByDate(date: Date): Promise<CashFlowEntry[]>;
+  getCashFlowEntriesByDateRange(startDate: Date, endDate: Date): Promise<CashFlowEntry[]>;
+  getUnpaidCashFlowEntries(): Promise<CashFlowEntry[]>;
+  getCashFlowEntriesByCustomer(customerId: string): Promise<CashFlowEntry[]>;
   getTodayCashFlowStats(): Promise<{
     totalSales: number;
     salesCount: number;
@@ -81,6 +95,14 @@ export interface IStorage {
     totalExpenses: number;
     netFlow: number;
   }>;
+  
+  // Accounts Receivable
+  getAccountsReceivable(): Promise<{
+    customerId: string;
+    customerName: string;
+    totalUnpaid: number;
+    entries: CashFlowEntry[];
+  }[]>;
 
   // Dashboard stats
   getDashboardStats(): Promise<{
@@ -101,6 +123,7 @@ export class MemStorage implements IStorage {
   private sales: Map<string, Sale> = new Map();
   private saleItems: Map<string, SaleItem[]> = new Map();
   private inventoryMovements: Map<string, InventoryMovement[]> = new Map();
+  private cashFlowCategories: Map<string, CashFlowCategory> = new Map();
   private cashFlowEntries: CashFlowEntry[] = [];
 
   constructor() {
@@ -169,6 +192,45 @@ export class MemStorage implements IStorage {
       minStockLevel: "10.000",
       brand: "ProtectiveGear",
       isActive: true,
+    });
+
+    // Create default cash flow categories
+    const incomeCategories = [
+      { name: "Penjualan Produk", description: "Pendapatan dari penjualan barang/jasa" },
+      { name: "Konsinyasi", description: "Pendapatan dari konsinyasi" },
+      { name: "Lain-lain", description: "Pendapatan lainnya" }
+    ];
+
+    const expenseCategories = [
+      { name: "Pembelian Barang", description: "Pembelian stok barang dagang" },
+      { name: "Operasional", description: "Biaya operasional harian" },
+      { name: "Listrik & Air", description: "Biaya utilitas" },
+      { name: "Gaji Karyawan", description: "Penggajian karyawan" },
+      { name: "Sewa Tempat", description: "Biaya sewa toko/tempat usaha" },
+      { name: "Pemasaran", description: "Biaya iklan dan promosi" },
+      { name: "Lain-lain", description: "Pengeluaran lainnya" }
+    ];
+
+    incomeCategories.forEach(cat => {
+      const id = randomUUID();
+      this.cashFlowCategories.set(id, {
+        id,
+        name: cat.name,
+        type: "income",
+        description: cat.description,
+        isActive: true
+      });
+    });
+
+    expenseCategories.forEach(cat => {
+      const id = randomUUID();
+      this.cashFlowCategories.set(id, {
+        id,
+        name: cat.name,
+        type: "expense",
+        description: cat.description,
+        isActive: true
+      });
     });
   }
 
@@ -547,7 +609,17 @@ export class MemStorage implements IStorage {
     const entry: CashFlowEntry = {
       ...insertEntry,
       id,
-      date: new Date()
+      date: new Date(),
+      categoryId: insertEntry.categoryId ?? null,
+      productId: insertEntry.productId ?? null,
+      customerId: insertEntry.customerId ?? null,
+      saleId: insertEntry.saleId ?? null,
+      quantity: insertEntry.quantity ?? null,
+      costPrice: insertEntry.costPrice ?? null,
+      photoEvidence: insertEntry.photoEvidence ?? null,
+      notes: insertEntry.notes ?? null,
+      paymentStatus: insertEntry.paymentStatus ?? "paid",
+      isManualEntry: insertEntry.isManualEntry ?? true
     };
     this.cashFlowEntries.push(entry);
     return entry;
@@ -607,6 +679,129 @@ export class MemStorage implements IStorage {
       totalExpenses,
       netFlow
     };
+  }
+
+  // Cash Flow Categories methods
+  async getCashFlowCategory(id: string): Promise<CashFlowCategory | undefined> {
+    return this.cashFlowCategories.get(id);
+  }
+
+  async createCashFlowCategory(insertCategory: InsertCashFlowCategory): Promise<CashFlowCategory> {
+    const id = randomUUID();
+    const category: CashFlowCategory = {
+      ...insertCategory,
+      id,
+      isActive: insertCategory.isActive ?? true,
+      description: insertCategory.description ?? null
+    };
+    this.cashFlowCategories.set(id, category);
+    return category;
+  }
+
+  async updateCashFlowCategory(id: string, updateCategory: Partial<InsertCashFlowCategory>): Promise<CashFlowCategory | undefined> {
+    const existing = this.cashFlowCategories.get(id);
+    if (!existing) return undefined;
+    
+    const updated = { ...existing, ...updateCategory };
+    this.cashFlowCategories.set(id, updated);
+    return updated;
+  }
+
+  async deleteCashFlowCategory(id: string): Promise<boolean> {
+    return this.cashFlowCategories.delete(id);
+  }
+
+  async getAllCashFlowCategories(): Promise<CashFlowCategory[]> {
+    return Array.from(this.cashFlowCategories.values());
+  }
+
+  async getCashFlowCategoriesByType(type: 'income' | 'expense'): Promise<CashFlowCategory[]> {
+    return Array.from(this.cashFlowCategories.values())
+      .filter(cat => cat.type === type && cat.isActive);
+  }
+
+  // Enhanced Cash Flow Entry methods
+  async updateCashFlowEntry(id: string, updateEntry: Partial<InsertCashFlowEntry>): Promise<CashFlowEntry | undefined> {
+    const index = this.cashFlowEntries.findIndex(entry => entry.id === id);
+    if (index === -1) return undefined;
+
+    const existing = this.cashFlowEntries[index];
+    const updated: CashFlowEntry = {
+      ...existing,
+      ...updateEntry,
+      categoryId: updateEntry.categoryId ?? existing.categoryId,
+      productId: updateEntry.productId ?? existing.productId,
+      customerId: updateEntry.customerId ?? existing.customerId,
+      saleId: updateEntry.saleId ?? existing.saleId,
+      quantity: updateEntry.quantity ?? existing.quantity,
+      costPrice: updateEntry.costPrice ?? existing.costPrice,
+      photoEvidence: updateEntry.photoEvidence ?? existing.photoEvidence,
+      notes: updateEntry.notes ?? existing.notes
+    };
+    
+    this.cashFlowEntries[index] = updated;
+    return updated;
+  }
+
+  async deleteCashFlowEntry(id: string): Promise<boolean> {
+    const index = this.cashFlowEntries.findIndex(entry => entry.id === id);
+    if (index === -1) return false;
+    
+    this.cashFlowEntries.splice(index, 1);
+    return true;
+  }
+
+  async getCashFlowEntriesByDateRange(startDate: Date, endDate: Date): Promise<CashFlowEntry[]> {
+    return this.cashFlowEntries.filter(entry => 
+      entry.date >= startDate && entry.date <= endDate
+    ).sort((a, b) => b.date.getTime() - a.date.getTime());
+  }
+
+  async getUnpaidCashFlowEntries(): Promise<CashFlowEntry[]> {
+    return this.cashFlowEntries.filter(entry => entry.paymentStatus === "unpaid")
+      .sort((a, b) => b.date.getTime() - a.date.getTime());
+  }
+
+  async getCashFlowEntriesByCustomer(customerId: string): Promise<CashFlowEntry[]> {
+    return this.cashFlowEntries.filter(entry => entry.customerId === customerId)
+      .sort((a, b) => b.date.getTime() - a.date.getTime());
+  }
+
+  // Accounts Receivable
+  async getAccountsReceivable(): Promise<{
+    customerId: string;
+    customerName: string;
+    totalUnpaid: number;
+    entries: CashFlowEntry[];
+  }[]> {
+    const unpaidEntries = await this.getUnpaidCashFlowEntries();
+    const customerGroups = new Map<string, CashFlowEntry[]>();
+
+    // Group entries by customer
+    for (const entry of unpaidEntries) {
+      if (entry.customerId) {
+        if (!customerGroups.has(entry.customerId)) {
+          customerGroups.set(entry.customerId, []);
+        }
+        customerGroups.get(entry.customerId)!.push(entry);
+      }
+    }
+
+    const receivables = [];
+    for (const [customerId, entries] of Array.from(customerGroups.entries())) {
+      const customer = this.customers.get(customerId);
+      if (customer) {
+        const totalUnpaid = entries.reduce((sum: number, entry: CashFlowEntry) => sum + parseFloat(entry.amount), 0);
+        receivables.push({
+          customerId,
+          customerName: `${customer.firstName} ${customer.lastName}`,
+          totalUnpaid,
+          entries
+        });
+      }
+    }
+
+    return receivables.sort((a, b) => b.totalUnpaid - a.totalUnpaid);
   }
 }
 

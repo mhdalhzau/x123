@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { useToast } from "@/hooks/use-toast";
 import { getAuthHeaders } from "@/lib/auth";
 import { type Product } from "@shared/schema";
+import { Package, AlertTriangle, XCircle, DollarSign, Search, Download, Edit, History, Warehouse } from "lucide-react";
 
 export default function Inventory() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -100,7 +101,7 @@ export default function Inventory() {
   });
 
   const totalValue = products.reduce((sum: number, product: Product) => 
-    sum + (product.stock * parseFloat(product.purchasePrice)), 0
+    sum + (parseFloat(product.stock) * parseFloat(product.purchasePrice)), 0
   );
 
   const handleAdjustStock = (product: Product) => {
@@ -131,14 +132,14 @@ export default function Inventory() {
   };
 
   const getStockStatusColor = (product: Product) => {
-    if (product.stock === 0) return "bg-red-100 text-red-800";
-    if (product.stock <= product.minStockLevel) return "bg-yellow-100 text-yellow-800";
+    if (parseFloat(product.stock) === 0) return "bg-red-100 text-red-800";
+    if (parseFloat(product.stock) <= parseFloat(product.minStockLevel)) return "bg-yellow-100 text-yellow-800";
     return "bg-green-100 text-green-800";
   };
 
   const getStockStatusText = (product: Product) => {
-    if (product.stock === 0) return "Out of Stock";
-    if (product.stock <= product.minStockLevel) return "Low Stock";
+    if (parseFloat(product.stock) === 0) return "Out of Stock";
+    if (parseFloat(product.stock) <= parseFloat(product.minStockLevel)) return "Low Stock";
     return "In Stock";
   };
 
@@ -190,7 +191,7 @@ export default function Inventory() {
                 </p>
               </div>
               <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                <i className="fas fa-box text-blue-600 text-xl"></i>
+                <Package className="w-6 h-6 text-blue-600" />
               </div>
             </div>
           </CardContent>
@@ -206,7 +207,7 @@ export default function Inventory() {
                 </p>
               </div>
               <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
-                <i className="fas fa-exclamation-triangle text-yellow-600 text-xl"></i>
+                <AlertTriangle className="w-6 h-6 text-yellow-600" />
               </div>
             </div>
           </CardContent>
@@ -218,11 +219,11 @@ export default function Inventory() {
               <div>
                 <p className="text-muted-foreground text-sm font-medium">Out of Stock</p>
                 <p className="text-2xl font-bold text-foreground" data-testid="stat-out-of-stock">
-                  {products.filter((p: Product) => p.stock === 0).length}
+                  {products.filter((p: Product) => parseFloat(p.stock) === 0).length}
                 </p>
               </div>
               <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
-                <i className="fas fa-times-circle text-red-600 text-xl"></i>
+                <XCircle className="w-6 h-6 text-red-600" />
               </div>
             </div>
           </CardContent>
@@ -238,7 +239,7 @@ export default function Inventory() {
                 </p>
               </div>
               <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                <i className="fas fa-dollar-sign text-green-600 text-xl"></i>
+                <DollarSign className="w-6 h-6 text-green-600" />
               </div>
             </div>
           </CardContent>
@@ -258,7 +259,7 @@ export default function Inventory() {
                 className="pl-10"
                 data-testid="search-inventory"
               />
-              <i className="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground"></i>
+              <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
             </div>
             
             <Select value={selectedCategory} onValueChange={setSelectedCategory}>
@@ -276,7 +277,7 @@ export default function Inventory() {
             </Select>
             
             <Button variant="secondary" data-testid="button-export">
-              <i className="fas fa-download mr-2"></i>
+              <Download className="w-4 h-4 mr-2" />
               Export Report
             </Button>
           </div>
@@ -303,14 +304,14 @@ export default function Inventory() {
               <TableBody>
                 {filteredProducts.map((product: Product) => {
                   const category = categories.find((c: any) => c.id === product.categoryId);
-                  const value = product.stock * parseFloat(product.purchasePrice);
+                  const value = parseFloat(product.stock) * parseFloat(product.purchasePrice);
                   
                   return (
                     <TableRow key={product.id} data-testid={`inventory-row-${product.id}`}>
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 bg-gradient-to-br from-blue-100 to-purple-100 rounded-lg flex items-center justify-center">
-                            <i className="fas fa-box text-blue-600"></i>
+                            <Package className="w-4 h-4 text-blue-600" />
                           </div>
                           <div>
                             <p className="font-medium" data-testid={`product-name-${product.id}`}>
@@ -350,14 +351,14 @@ export default function Inventory() {
                             onClick={() => handleAdjustStock(product)}
                             data-testid={`adjust-stock-${product.id}`}
                           >
-                            <i className="fas fa-edit text-blue-600"></i>
+                            <Edit className="w-4 h-4 text-blue-600" />
                           </Button>
                           <Button
                             variant="ghost"
                             size="sm"
                             data-testid={`view-movements-${product.id}`}
                           >
-                            <i className="fas fa-history text-green-600"></i>
+                            <History className="w-4 h-4 text-green-600" />
                           </Button>
                         </div>
                       </TableCell>
@@ -370,7 +371,7 @@ export default function Inventory() {
           
           {filteredProducts.length === 0 && (
             <div className="text-center py-12">
-              <i className="fas fa-warehouse text-4xl text-muted-foreground mb-4"></i>
+              <Warehouse className="w-16 h-16 text-muted-foreground mb-4" />
               <h3 className="text-lg font-medium text-foreground mb-2">No products found</h3>
               <p className="text-muted-foreground">
                 {searchTerm || selectedCategory !== "all"

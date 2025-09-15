@@ -1,6 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { getAuthHeaders } from "@/lib/auth";
+import { 
+  ArrowUp, DollarSign, ShoppingCart, AlertTriangle, 
+  Package, UserPlus, Users, TrendingUp, Warehouse 
+} from "lucide-react";
 
 export default function Dashboard() {
   const { data: stats, isLoading } = useQuery({
@@ -43,12 +47,12 @@ export default function Dashboard() {
                   ${stats?.todaySales?.toFixed(2) || "0.00"}
                 </p>
                 <p className="text-sm text-green-600 flex items-center gap-1 mt-1">
-                  <i className="fas fa-arrow-up"></i>
+                  <ArrowUp className="w-4 h-4" />
                   <span>+12.5%</span>
                 </p>
               </div>
               <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                <i className="fas fa-dollar-sign text-green-600 text-xl"></i>
+                <DollarSign className="w-6 h-6 text-green-600" />
               </div>
             </div>
           </CardContent>
@@ -63,12 +67,12 @@ export default function Dashboard() {
                   {stats?.ordersToday || 0}
                 </p>
                 <p className="text-sm text-green-600 flex items-center gap-1 mt-1">
-                  <i className="fas fa-arrow-up"></i>
+                  <ArrowUp className="w-4 h-4" />
                   <span>+8.2%</span>
                 </p>
               </div>
               <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                <i className="fas fa-shopping-cart text-blue-600 text-xl"></i>
+                <ShoppingCart className="w-6 h-6 text-blue-600" />
               </div>
             </div>
           </CardContent>
@@ -83,12 +87,12 @@ export default function Dashboard() {
                   {stats?.totalProducts || 0}
                 </p>
                 <p className="text-sm text-yellow-600 flex items-center gap-1 mt-1">
-                  <i className="fas fa-exclamation-triangle"></i>
+                  <AlertTriangle className="w-4 h-4" />
                   <span>{stats?.lowStockCount || 0} Low Stock</span>
                 </p>
               </div>
               <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                <i className="fas fa-box text-purple-600 text-xl"></i>
+                <Package className="w-6 h-6 text-purple-600" />
               </div>
             </div>
           </CardContent>
@@ -103,12 +107,12 @@ export default function Dashboard() {
                   {stats?.totalCustomers || 0}
                 </p>
                 <p className="text-sm text-green-600 flex items-center gap-1 mt-1">
-                  <i className="fas fa-user-plus"></i>
+                  <UserPlus className="w-4 h-4" />
                   <span>+15 This Week</span>
                 </p>
               </div>
               <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center">
-                <i className="fas fa-users text-indigo-600 text-xl"></i>
+                <Users className="w-6 h-6 text-indigo-600" />
               </div>
             </div>
           </CardContent>
@@ -122,7 +126,7 @@ export default function Dashboard() {
             <h3 className="text-lg font-semibold text-foreground mb-4">Recent Sales</h3>
             <div className="space-y-4">
               <div className="text-center py-8 text-muted-foreground">
-                <i className="fas fa-chart-line text-4xl mb-4"></i>
+                <TrendingUp className="w-16 h-16 mb-4" />
                 <p>No recent sales data available</p>
                 <p className="text-sm">Sales will appear here as they are processed</p>
               </div>
@@ -135,7 +139,7 @@ export default function Dashboard() {
             <h3 className="text-lg font-semibold text-foreground mb-4">Low Stock Alert</h3>
             <div className="space-y-4">
               <div className="text-center py-8 text-muted-foreground">
-                <i className="fas fa-warehouse text-4xl mb-4"></i>
+                <Warehouse className="w-16 h-16 mb-4" />
                 <p>No low stock items</p>
                 <p className="text-sm">Products running low will appear here</p>
               </div>

@@ -14,6 +14,7 @@ import Inventory from "./pages/Inventory";
 import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
 import CashFlow from "./pages/CashFlow";
+import AccountsReceivable from "./pages/AccountsReceivable";
 import Sidebar from "./components/layout/Sidebar";
 import Header from "./components/layout/Header";
 import NotFound from "@/pages/not-found";
@@ -51,6 +52,7 @@ function AppContent() {
           <Route path="/inventory" component={Inventory} />
           <Route path="/reports" component={Reports} />
           <Route path="/cashflow" component={CashFlow} />
+          <Route path="/accounts-receivable" component={AccountsReceivable} />
           <Route path="/settings" component={Settings} />
           <Route component={NotFound} />
         </Switch>

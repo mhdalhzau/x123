@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { Star } from "lucide-react";
 
 export default function Login() {
   const [username, setUsername] = useState("");
@@ -40,7 +41,7 @@ export default function Login() {
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
             <div className="w-16 h-16 bg-primary rounded-lg flex items-center justify-center">
-              <i className="fas fa-star text-primary-foreground text-2xl"></i>
+              <Star className="w-8 h-8 text-primary-foreground" />
             </div>
           </div>
           <CardTitle className="text-2xl font-bold">StarPOS</CardTitle>

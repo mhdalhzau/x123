@@ -86,12 +86,40 @@ export const inventoryMovements = pgTable("inventory_movements", {
   movementDate: timestamp("movement_date").notNull().default(sql`now()`),
 });
 
+// Cash flow categories for better organization
+export const cashFlowCategories = pgTable("cash_flow_categories", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  type: text("type", { enum: ["income", "expense"] }).notNull(),
+  description: text("description"),
+  isActive: boolean("is_active").notNull().default(true),
+});
+
 export const cashFlowEntries = pgTable("cash_flow_entries", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   type: text("type", { enum: ["income", "expense"] }).notNull(),
   amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
   description: text("description").notNull(),
   category: text("category").notNull(),
+  categoryId: varchar("category_id").references(() => cashFlowCategories.id),
+  
+  // Product integration
+  productId: varchar("product_id").references(() => products.id),
+  quantity: decimal("quantity", { precision: 10, scale: 3 }),
+  costPrice: decimal("cost_price", { precision: 10, scale: 2 }),
+  
+  // Payment status and customer sync
+  paymentStatus: text("payment_status", { enum: ["paid", "unpaid"] }).notNull().default("paid"),
+  customerId: varchar("customer_id").references(() => customers.id),
+  
+  // Additional fields
+  photoEvidence: text("photo_evidence"), // URL or path to uploaded photo
+  notes: text("notes"),
+  
+  // System fields
+  isManualEntry: boolean("is_manual_entry").notNull().default(true),
+  saleId: varchar("sale_id").references(() => sales.id), // Link to POS sales
+  
   userId: varchar("user_id").references(() => users.id).notNull(),
   date: timestamp("date").notNull().default(sql`now()`),
 });
@@ -105,6 +133,7 @@ export const insertProductSchema = createInsertSchema(products).omit({ id: true 
 export const insertSaleSchema = createInsertSchema(sales).omit({ id: true, saleDate: true });
 export const insertSaleItemSchema = createInsertSchema(saleItems).omit({ id: true });
 export const insertInventoryMovementSchema = createInsertSchema(inventoryMovements).omit({ id: true, movementDate: true });
+export const insertCashFlowCategorySchema = createInsertSchema(cashFlowCategories).omit({ id: true });
 export const insertCashFlowEntrySchema = createInsertSchema(cashFlowEntries).omit({ id: true, date: true });
 
 // Types
@@ -124,6 +153,8 @@ export type SaleItem = typeof saleItems.$inferSelect;
 export type InsertSaleItem = z.infer<typeof insertSaleItemSchema>;
 export type InventoryMovement = typeof inventoryMovements.$inferSelect;
 export type InsertInventoryMovement = z.infer<typeof insertInventoryMovementSchema>;
+export type CashFlowCategory = typeof cashFlowCategories.$inferSelect;
+export type InsertCashFlowCategory = z.infer<typeof insertCashFlowCategorySchema>;
 export type CashFlowEntry = typeof cashFlowEntries.$inferSelect;
 export type InsertCashFlowEntry = z.infer<typeof insertCashFlowEntrySchema>;
 

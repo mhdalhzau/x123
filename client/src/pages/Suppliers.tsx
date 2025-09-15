@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { getAuthHeaders } from "@/lib/auth";
 import SupplierModal from "@/components/suppliers/SupplierModal";
 import { type Supplier } from "@shared/schema";
+import { Plus, Search, Truck, Mail, UserCheck, Edit, Eye, Trash2 } from "lucide-react";
 
 export default function Suppliers() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -88,7 +89,7 @@ export default function Suppliers() {
 
   const toggleSelectAll = () => {
     setSelectedSuppliers(prev =>
-      prev.length === filteredSuppliers.length ? [] : filteredSuppliers.map(s => s.id)
+      prev.length === filteredSuppliers.length ? [] : filteredSuppliers.map((s: Supplier) => s.id)
     );
   };
 
@@ -129,7 +130,7 @@ export default function Suppliers() {
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-foreground">Supplier Management</h1>
         <Button onClick={handleAddSupplier} data-testid="button-add-supplier">
-          <i className="fas fa-plus mr-2"></i>
+          <Plus className="w-4 h-4 mr-2" />
           Add Supplier
         </Button>
       </div>
@@ -146,7 +147,7 @@ export default function Suppliers() {
               className="pl-10"
               data-testid="search-suppliers"
             />
-            <i className="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground"></i>
+            <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
           </div>
         </CardContent>
       </Card>
@@ -163,7 +164,7 @@ export default function Suppliers() {
                 </p>
               </div>
               <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
-                <i className="fas fa-truck text-orange-600 text-xl"></i>
+                <Truck className="w-6 h-6 text-orange-600" />
               </div>
             </div>
           </CardContent>
@@ -179,7 +180,7 @@ export default function Suppliers() {
                 </p>
               </div>
               <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                <i className="fas fa-envelope text-green-600 text-xl"></i>
+                <Mail className="w-6 h-6 text-green-600" />
               </div>
             </div>
           </CardContent>
@@ -195,7 +196,7 @@ export default function Suppliers() {
                 </p>
               </div>
               <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                <i className="fas fa-user-tie text-blue-600 text-xl"></i>
+                <UserCheck className="w-6 h-6 text-blue-600" />
               </div>
             </div>
           </CardContent>
@@ -236,7 +237,7 @@ export default function Suppliers() {
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
-                          <i className="fas fa-truck text-orange-600"></i>
+                          <Truck className="w-4 h-4 text-orange-600" />
                         </div>
                         <div>
                           <p className="font-medium" data-testid={`supplier-name-${supplier.id}`}>
@@ -265,14 +266,14 @@ export default function Suppliers() {
                           onClick={() => handleEdit(supplier)}
                           data-testid={`edit-supplier-${supplier.id}`}
                         >
-                          <i className="fas fa-edit text-blue-600"></i>
+                          <Edit className="w-4 h-4 text-blue-600" />
                         </Button>
                         <Button
                           variant="ghost"
                           size="sm"
                           data-testid={`view-supplier-${supplier.id}`}
                         >
-                          <i className="fas fa-eye text-green-600"></i>
+                          <Eye className="w-4 h-4 text-green-600" />
                         </Button>
                         <Button
                           variant="ghost"
@@ -280,7 +281,7 @@ export default function Suppliers() {
                           onClick={() => handleDelete(supplier.id)}
                           data-testid={`delete-supplier-${supplier.id}`}
                         >
-                          <i className="fas fa-trash text-red-600"></i>
+                          <Trash2 className="w-4 h-4 text-red-600" />
                         </Button>
                       </div>
                     </TableCell>
@@ -292,7 +293,7 @@ export default function Suppliers() {
           
           {filteredSuppliers.length === 0 && (
             <div className="text-center py-12">
-              <i className="fas fa-truck text-4xl text-muted-foreground mb-4"></i>
+              <Truck className="w-16 h-16 text-muted-foreground mb-4" />
               <h3 className="text-lg font-medium text-foreground mb-2">No suppliers found</h3>
               <p className="text-muted-foreground mb-4">
                 {searchTerm
@@ -300,7 +301,7 @@ export default function Suppliers() {
                   : "Get started by adding your first supplier"}
               </p>
               <Button onClick={handleAddSupplier}>
-                <i className="fas fa-plus mr-2"></i>
+                <Plus className="w-4 h-4 mr-2" />
                 Add Supplier
               </Button>
             </div>

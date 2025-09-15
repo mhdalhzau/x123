@@ -1,6 +1,7 @@
 import { useLocation } from "wouter";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
+import { Search, User, LogOut } from "lucide-react";
 
 const pageTitles: Record<string, string> = {
   "/": "Dashboard",
@@ -37,12 +38,12 @@ export default function Header() {
               className="bg-input border border-border rounded-lg px-4 py-2 pl-10 focus:ring-2 focus:ring-ring focus:border-transparent"
               data-testid="search-input"
             />
-            <i className="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground"></i>
+            <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
           </div>
           
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-              <i className="fas fa-user text-primary-foreground text-sm"></i>
+              <User className="w-4 h-4 text-primary-foreground" />
             </div>
             <div className="hidden md:block">
               <p className="text-sm font-medium" data-testid="user-name">
@@ -58,7 +59,7 @@ export default function Header() {
               onClick={logout}
               data-testid="logout-button"
             >
-              <i className="fas fa-sign-out-alt"></i>
+              <LogOut className="w-4 h-4" />
             </Button>
           </div>
         </div>
