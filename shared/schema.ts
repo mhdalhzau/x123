@@ -49,8 +49,8 @@ export const products = pgTable("products", {
   supplierId: varchar("supplier_id").references(() => suppliers.id),
   purchasePrice: decimal("purchase_price", { precision: 10, scale: 2 }).notNull(),
   sellingPrice: decimal("selling_price", { precision: 10, scale: 2 }).notNull(),
-  stock: integer("stock").notNull().default(0),
-  minStockLevel: integer("min_stock_level").notNull().default(5),
+  stock: decimal("stock", { precision: 10, scale: 3 }).notNull().default("0"),
+  minStockLevel: decimal("min_stock_level", { precision: 10, scale: 3 }).notNull().default("5"),
   brand: text("brand"),
   isActive: boolean("is_active").notNull().default(true),
 });
@@ -71,7 +71,7 @@ export const saleItems = pgTable("sale_items", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   saleId: varchar("sale_id").references(() => sales.id).notNull(),
   productId: varchar("product_id").references(() => products.id).notNull(),
-  quantity: integer("quantity").notNull(),
+  quantity: decimal("quantity", { precision: 10, scale: 3 }).notNull(),
   unitPrice: decimal("unit_price", { precision: 10, scale: 2 }).notNull(),
   total: decimal("total", { precision: 10, scale: 2 }).notNull(),
 });
@@ -80,7 +80,7 @@ export const inventoryMovements = pgTable("inventory_movements", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   productId: varchar("product_id").references(() => products.id).notNull(),
   type: text("type", { enum: ["in", "out", "adjustment"] }).notNull(),
-  quantity: integer("quantity").notNull(),
+  quantity: decimal("quantity", { precision: 10, scale: 3 }).notNull(),
   reason: text("reason").notNull(),
   userId: varchar("user_id").references(() => users.id).notNull(),
   movementDate: timestamp("movement_date").notNull().default(sql`now()`),
