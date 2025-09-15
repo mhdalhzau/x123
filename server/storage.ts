@@ -196,19 +196,26 @@ export class MemStorage implements IStorage {
 
     // Create default cash flow categories
     const incomeCategories = [
-      { name: "Penjualan Produk", description: "Pendapatan dari penjualan barang/jasa" },
-      { name: "Konsinyasi", description: "Pendapatan dari konsinyasi" },
-      { name: "Lain-lain", description: "Pendapatan lainnya" }
+      { name: "Penjualan", description: "Pemasukan dari hasil penjualan usaha." },
+      { name: "Pendapatan Jasa/Komisi", description: "Pemasukan dari komisi usaha atau jasa" },
+      { name: "Penambahan Modal", description: "Pemasukan yang digunakan untuk modal tambahan usaha kamu." },
+      { name: "Penagihan Utang/Cicilan", description: "Pemasukan dari pengembalian utang atau pembayaran cicilan." },
+      { name: "Terima Pinjaman", description: "Pemasukan dari penerimaan uang pinjaman untuk usaha kamu." },
+      { name: "Transaksi Agen Pembayaran", description: "Pemasukan dari transaksi sebagai agen pembayaran, contoh: agen BriLink." },
+      { name: "Pendapatan Di Luar Usaha", description: "Pemasukan pribadi yang tidak berhubungan dengan kegiatan usaha. Contoh: hibah, hadiah, atau sedekah." },
+      { name: "Pendapatan Lain-lain", description: "Pendapatan lainnya yang tidak masuk dalam kategori di atas." }
     ];
 
     const expenseCategories = [
-      { name: "Pembelian Barang", description: "Pembelian stok barang dagang" },
-      { name: "Operasional", description: "Biaya operasional harian" },
-      { name: "Listrik & Air", description: "Biaya utilitas" },
-      { name: "Gaji Karyawan", description: "Penggajian karyawan" },
-      { name: "Sewa Tempat", description: "Biaya sewa toko/tempat usaha" },
-      { name: "Pemasaran", description: "Biaya iklan dan promosi" },
-      { name: "Lain-lain", description: "Pengeluaran lainnya" }
+      { name: "Pembelian stok", description: "Pengeluaran untuk pembelian barang yang akan dijual kembali." },
+      { name: "Pembelian bahan baku", description: "Pembelian bahan dasar yang akan diolah menjadi barang siap jual." },
+      { name: "Biaya operasional", description: "Biaya untuk menjalankan kegiatan usaha. Contoh: sewa tempat, listrik, dan internet." },
+      { name: "Gaji/Bonus Karyawan", description: "Pembayaran upah, gaji, atau bonus karyawan." },
+      { name: "Pemberian Utang", description: "Pengeluaran untuk memberikan pinjaman uang." },
+      { name: "Transaksi Agen Pembayaran", description: "Pengeluaran untuk transaksi sebagai agen pembayaran, contoh: agen BriLink." },
+      { name: "Pembayaran Utang/Cicilan", description: "Pengeluaran usaha untuk membayar utang/cicilan." },
+      { name: "Pengeluaran Di Luar Usaha", description: "Pengeluaran untuk kebutuhan pribadi yang tidak berhubungan dengan kegiatan usaha. Contoh: bayar berobat anak." },
+      { name: "Pengeluaran Lain-lain", description: "Pengeluaran lainnya yang tidak masuk dalam kategori di atas." }
     ];
 
     incomeCategories.forEach(cat => {
