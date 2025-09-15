@@ -24,7 +24,7 @@ const navigation = [
   { name: "Suppliers", href: "/suppliers", icon: Truck },
   { name: "Cash Flow", href: "/cashflow", icon: DollarSign },
   { name: "Reports", href: "/reports", icon: BarChart3 },
-  { name: "Users", href: "/users", icon: Settings },
+  { name: "Settings", href: "/settings", icon: Settings },
 ];
 
 export default function Sidebar() {
@@ -40,7 +40,7 @@ export default function Sidebar() {
   };
 
   const filteredNavigation = navigation.filter(item => {
-    if (item.href === "/users") {
+    if (item.href === "/settings") {
       return user?.role === "admin";
     }
     return true;

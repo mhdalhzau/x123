@@ -1,12 +1,29 @@
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, Printer, Settings as SettingsIcon } from "lucide-react";
+import { Users, Printer, Settings as SettingsIcon, ShieldAlert } from "lucide-react";
+import { useAuth } from "@/lib/auth";
 import UsersTab from "@/components/settings/UsersTab";
 import PrinterTab from "@/components/settings/PrinterTab";
 
 export default function Settings() {
   const [activeTab, setActiveTab] = useState("users");
+  const { user } = useAuth();
+
+  // Admin-only access
+  if (user?.role !== "admin") {
+    return (
+      <main className="p-6 animate-fade-in">
+        <div className="flex flex-col items-center justify-center min-h-[60vh]">
+          <ShieldAlert className="w-16 h-16 text-muted-foreground mb-4" />
+          <h1 className="text-2xl font-bold text-foreground mb-2">Access Denied</h1>
+          <p className="text-muted-foreground text-center max-w-md">
+            You don't have permission to access this page. Only administrators can manage system settings.
+          </p>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="p-6 animate-fade-in">
